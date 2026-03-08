@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import PiplLayout from "@/components/PiplLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -108,8 +107,7 @@ export default function Mobile() {
   const iosBuilds = expo?.builds?.filter((b) => b.platform === "IOS") ?? [];
 
   return (
-    <PiplLayout>
-      <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-6 max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -443,7 +441,6 @@ export default function Mobile() {
             )}
           </TabsContent>
         </Tabs>
-      </div>
-    </PiplLayout>
+    </div>
   );
 }

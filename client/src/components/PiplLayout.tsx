@@ -95,6 +95,16 @@ export default function PiplLayout({ children }: { children: React.ReactNode }) 
     return () => clearTimeout(t);
   }, []);
 
+  // Redirection dans useEffect pour éviter le bug removeChild (mutation DOM pendant le render)
+  useEffect(() => {
+    if (!authLoading && !timedOut && !isAuthenticated) {
+      window.location.href = "/login";
+    }
+    if (timedOut && !isAuthenticated) {
+      window.location.href = "/login";
+    }
+  }, [authLoading, timedOut, isAuthenticated]);
+
   const loading = authLoading && !timedOut;
 
   if (loading) {
@@ -109,9 +119,12 @@ export default function PiplLayout({ children }: { children: React.ReactNode }) 
   }
 
   if (!isAuthenticated) {
-    // Rediriger vers la page de connexion locale
-    window.location.href = "/login";
-    return null;
+    // Afficher un écran vide pendant la redirection (évite le rendu du layout)
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   }
 
   return (
