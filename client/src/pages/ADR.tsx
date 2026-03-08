@@ -11,6 +11,7 @@ import { Shield, Plus, CheckCircle2, Clock, Archive, RefreshCw } from "lucide-re
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { Streamdown } from "streamdown";
 
 const CATEGORIES = [
   { value: "architecture", label: "Architecture", color: "text-indigo-500" },
@@ -264,18 +265,24 @@ export default function ADR() {
                   <div className="border-t border-border px-5 py-4 space-y-4">
                     {adr.context && (
                       <div>
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Contexte</p>
-                        <p className="text-sm text-muted-foreground">{adr.context}</p>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Contexte</p>
+                        <div className="text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none prose-code:bg-muted prose-code:px-1 prose-code:rounded prose-pre:bg-muted prose-pre:text-xs">
+                          <Streamdown>{adr.context}</Streamdown>
+                        </div>
                       </div>
                     )}
                     <div>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Décision</p>
-                      <p className="text-sm">{adr.decision}</p>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Décision</p>
+                      <div className="text-sm prose prose-sm dark:prose-invert max-w-none prose-code:bg-muted prose-code:px-1 prose-code:rounded prose-pre:bg-muted prose-pre:text-xs">
+                        <Streamdown>{adr.decision}</Streamdown>
+                      </div>
                     </div>
                     {adr.consequences && (
                       <div>
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Conséquences</p>
-                        <p className="text-sm text-muted-foreground">{adr.consequences}</p>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Conséquences</p>
+                        <div className="text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none prose-code:bg-muted prose-code:px-1 prose-code:rounded prose-pre:bg-muted prose-pre:text-xs">
+                          <Streamdown>{adr.consequences}</Streamdown>
+                        </div>
                       </div>
                     )}
                     <div className="flex items-center gap-2 pt-2 border-t border-border">

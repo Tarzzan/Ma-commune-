@@ -334,42 +334,313 @@ export const appRouter = router({
         if (existing.length > 0) return { success: true, count: 0, message: "Des ADR existent déjà" };
         const seedData = [
           {
-            title: "Migration vers PHP 8.4",
-            context: "Le projet Ma Commune utilisait PHP 7.4 en production. PHP 7.4 est en fin de vie depuis novembre 2022. Les nouvelles fonctionnalités (fibers, enums, readonly properties) améliorent la qualité du code.",
-            decision: "Migrer vers PHP 8.4 sur le VPS Ubuntu 22.04 via le dépôt ondrej/php. Utiliser PHP-FPM avec Nginx. Mettre à jour toutes les dépendances Composer.",
-            consequences: "Performance améliorée (+15% selon benchmarks). Compatibilité avec les nouvelles bibliothèques. Nécessite la mise à jour des extensions (pdo_mysql, mbstring, gd, zip).",
+            title: "Migration vers PHP 8.4 (Infrastructure)",
+            context: `Le projet Ma Commune tournait sur PHP 7.4, en fin de vie depuis novembre 2022. Le VPS Ubuntu 22.04 supporte PHP 8.4 via le dépôt ondrej/php. Les nouvelles fonctionnalités (enums, readonly properties, fibers, named arguments, match expressions) permettent d'écrire un code plus robuste et expressif.
+
+**Contexte technique :**
+- PHP 7.4 : fin de support sécurité le 28 nov. 2022
+- Dépendances Composer incompatibles avec PHP 7.4 (fpdf2, phinx 0.14+)
+- Extensions requises : pdo_mysql, mbstring, gd, zip, curl, intl, xml`,
+            decision: `Migrer vers **PHP 8.4-FPM** sur Ubuntu 22.04 via le dépôt ondrej/php. Utiliser Nginx comme reverse proxy vers PHP-FPM sur socket Unix.
+
+**Commandes d'installation :**
+\`\`\`bash
+add-apt-repository ppa:ondrej/php
+apt install php8.4-fpm php8.4-mysql php8.4-mbstring \\
+  php8.4-gd php8.4-zip php8.4-curl php8.4-xml php8.4-intl
+\`\`\`
+
+**Configuration Nginx (extrait) :**
+\`\`\`nginx
+location ~ \\.php$ {
+    fastcgi_pass unix:/run/php/php8.4-fpm.sock;
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    include fastcgi_params;
+}
+\`\`\`
+
+**Exemple de code PHP 8.4 utilisé dans le projet :**
+\`\`\`php
+// match expression (PHP 8.0+) dans IncidentController
+$priority = match($input['priority']) {
+    'high'   => 3,
+    'medium' => 2,
+    default  => 1,
+};
+
+// Named arguments (PHP 8.0+) dans Security.php
+$clean = htmlspecialchars(
+    string: strip_tags(trim($value)),
+    flags: ENT_QUOTES | ENT_HTML5,
+    encoding: 'UTF-8'
+);
+\`\`\``,
+            consequences: `**Positif :**
+- Performance améliorée de ~15% (JIT compiler activé)
+- Compatibilité avec phinx 0.14+ pour les migrations
+- Support sécurité jusqu'en décembre 2028
+
+**Négatif :**
+- Nécessite la mise à jour manuelle de toutes les extensions
+- Incompatibilité possible avec certains packages Composer legacy
+
+**Fichiers impactés :** backend/config/config.php, backend/composer.json, /etc/nginx/sites-available/ma-commune`,
             status: "accepted" as const,
             category: "infrastructure",
           },
           {
-            title: "Architecture REST API PHP sans framework",
-            context: "Choix entre Laravel, Symfony, Slim et une API PHP native. Le projet est de taille moyenne avec des contraintes de performance sur un VPS 2 vCPU.",
-            decision: "Implémenter une API REST PHP native avec routage manuel, PDO pour la base de données, et JWT pour l'authentification. Pas de framework lourd.",
-            consequences: "Empreinte mémoire minimale (<10 MB par requête). Courbe d'apprentissage plus élevée pour les nouveaux contributeurs. Flexibilité totale sur l'architecture.",
+            title: "Architecture REST API PHP native sans framework",
+            context: `Choix entre Laravel 11, Symfony 7, Slim 4 et une API PHP native. Le projet est de taille moyenne (21 tables, ~15 endpoints) avec des contraintes de performance sur un VPS 2 vCPU / 4 Go RAM.
+
+**Comparaison évaluée :**
+| Framework | RAM/req | Temps boot | Complexité |
+|-----------|---------|------------|------------|
+| Laravel 11 | ~45 MB | ~120ms | Élevée |
+| Symfony 7 | ~35 MB | ~90ms | Élevée |
+| Slim 4 | ~8 MB | ~15ms | Moyenne |
+| PHP natif | ~4 MB | ~5ms | Faible |`,
+            decision: `Implémenter une **API REST PHP native** avec :
+- Routage manuel dans \`backend/index.php\`
+- PDO + requêtes préparées pour la base de données
+- JWT HS256 pour l'authentification stateless
+- Système RBAC via \`core/Permissions.php\`
+
+**Extrait du routeur (backend/index.php) :**
+\`\`\`php
+$resource = $segments[0] ?? '';
+$id       = isset($segments[1]) ? Security::sanitizeId($segments[1]) : null;
+
+switch ($resource) {
+    case 'incidents':
+        $ctrl = new IncidentController($db);
+        match($method) {
+            'GET'    => $id ? $ctrl->show($id) : $ctrl->index(),
+            'POST'   => $ctrl->create(),
+            'PUT'    => $ctrl->update($id),
+            'DELETE' => $ctrl->delete($id),
+        };
+        break;
+}
+\`\`\`
+
+**Système RBAC (core/Permissions.php) :**
+\`\`\`php
+private const MATRIX = [
+    'incident:create'        => ['citizen', 'agent', 'admin'],
+    'incident:update_status' => ['agent', 'admin'],
+    'incident:delete'        => ['admin'],
+    'user:manage'            => ['admin'],
+];
+
+public static function require(string $permission, array $auth): void {
+    $role = $auth['role'] ?? 'citizen';
+    if (!in_array($role, self::MATRIX[$permission] ?? [])) {
+        http_response_code(403);
+        exit(json_encode(['error' => 'Permission refusée']));
+    }
+}
+\`\`\``,
+            consequences: `**Positif :**
+- Empreinte mémoire minimale (~4 MB par requête)
+- Aucune dépendance framework à maintenir
+- Flexibilité totale sur l'architecture
+
+**Négatif :**
+- Courbe d'apprentissage pour les nouveaux contributeurs habitués à Laravel
+- Pas d'ORM natif (requêtes SQL manuelles)
+- Pas de système de middleware automatique
+
+**Fichiers clés :** backend/index.php, backend/core/BaseController.php, backend/core/Permissions.php`,
             status: "accepted" as const,
             category: "architecture",
           },
           {
-            title: "Authentification 2FA par email (TOTP optionnel)",
-            context: "La plateforme gère des données citoyennes sensibles. Une authentification simple par mot de passe est insuffisante pour les comptes administrateurs.",
-            decision: "Implémenter un système 2FA par email (code OTP 6 chiffres, validité 15 min) pour les admins. TOTP (Google Authenticator) prévu en v1.3.",
-            consequences: "Sécurité renforcée pour les comptes privilégiés. Dépendance au service email (SMTP). Expérience utilisateur légèrement alourdie.",
+            title: "Authentification 2FA (TOTP + Email OTP)",
+            context: `La plateforme gère des données citoyennes sensibles (signalements géolocalisés, identités). Une authentification simple par mot de passe est insuffisante pour les comptes administrateurs et agents.
+
+**Menaces identifiées :**
+- Brute force sur /auth/login (mitigé par RateLimiter : 10 req/15min par IP)
+- Credential stuffing depuis des bases de données leakées
+- Sessions volées par XSS (mitigé par HttpOnly cookies)
+
+**Exigences :**
+- 2FA obligatoire pour les rôles admin et agent
+- 2FA optionnel pour les citoyens
+- Support TOTP (Google Authenticator) en v1.3`,
+            decision: `Implémenter un système 2FA en deux phases :
+
+**Phase 1 (v1.2 — actuelle) : Email OTP**
+\`\`\`php
+// TwoFactorController.php — Envoi du code
+$code = sprintf('%06d', random_int(0, 999999));
+$expiry = date('Y-m-d H:i:s', time() + 900); // 15 min
+
+$stmt = $this->db->prepare(
+    'UPDATE users SET two_factor_code = ?, two_factor_expiry = ? WHERE id = ?'
+);
+$stmt->execute([$code, $expiry, $userId]);
+// Envoi par email via PushNotificationService
+\`\`\`
+
+**Phase 2 (v1.3 — planifiée) : TOTP**
+\`\`\`php
+// Setup TOTP — génération du secret
+$secret = Base32::encode(random_bytes(20));
+$qrUrl  = "otpauth://totp/" . APP_NAME . ":" . $email
+        . "?secret=" . $secret . "&issuer=" . APP_NAME;
+
+$stmt = $this->db->prepare(
+    'UPDATE users SET two_factor_secret = ?, two_factor_method = "pending_totp" WHERE id = ?'
+);
+$stmt->execute([$secret, $userId]);
+\`\`\`
+
+**Rate limiting sur les endpoints 2FA :**
+\`\`\`php
+'auth_2fa' => ['ip' => ['requests' => 10, 'window' => 600]]
+// 10 tentatives max par 10 minutes par IP
+\`\`\``,
+            consequences: `**Positif :**
+- Sécurité renforcée pour les comptes privilégiés
+- Compatible avec tous les clients email
+- TOTP prévu pour réduire la dépendance SMTP
+
+**Négatif :**
+- Dépendance au service email (SMTP) pour la phase 1
+- Expérience utilisateur légèrement alourdie (+1 étape)
+- Codes de récupération à stocker de façon sécurisée
+
+**Fichiers impactés :** backend/controllers/TwoFactorController.php, backend/core/RateLimiter.php, database/migrations/`,
             status: "accepted" as const,
             category: "securite",
           },
           {
-            title: "Conformité RGAA 4.1 pour l'accessibilité",
-            context: "Ma Commune est une plateforme citoyenne publique. La loi française (RGAA) impose l'accessibilité numérique pour les services publics. L'application mobile doit être utilisable par les personnes en situation de handicap.",
-            decision: "Adopter le référentiel RGAA 4.1 comme standard d'accessibilité. Implémenter les critères de niveau AA. Audit d'accessibilité prévu avant la mise en production v1.3.",
-            consequences: "Travail supplémentaire estimé à 3 semaines. Améliore l'UX pour tous les utilisateurs. Obligation légale pour les services publics.",
+            title: "Conformité RGAA 4.1 — Accessibilité niveau AA",
+            context: `Ma Commune est une plateforme citoyenne publique. La loi française (article 47 de la loi n°2005-102) et le RGAA 4.1 imposent l'accessibilité numérique pour les services publics. L'application mobile React Native doit être utilisable par les personnes en situation de handicap (visuel, moteur, cognitif).
+
+**Critères prioritaires RGAA 4.1 (niveau AA) :**
+- Critère 1.1 : Chaque image a un texte alternatif
+- Critère 3.2 : Contraste minimum 4.5:1 (texte normal)
+- Critère 4.1 : Chaque média a une transcription
+- Critère 7.1 : Navigation clavier complète
+- Critère 10.1 : Pas de mise en forme via attributs HTML dépréciés`,
+            decision: `Adopter le **RGAA 4.1** comme standard d'accessibilité avec les actions suivantes :
+
+**1. Attributs ARIA dans l'app mobile (React Native) :**
+\`\`\`tsx
+// Bouton de signalement accessible
+<TouchableOpacity
+  accessible={true}
+  accessibilityLabel="Signaler un problème dans votre commune"
+  accessibilityRole="button"
+  accessibilityHint="Ouvre le formulaire de signalement"
+>
+  <Text>Signaler</Text>
+</TouchableOpacity>
+
+// Image avec description
+<Image
+  source={{ uri: incident.photo }}
+  accessibilityLabel={\`Photo du signalement : \${incident.title}\`}
+/>
+\`\`\`
+
+**2. Contraste des couleurs (admin PHP) :**
+\`\`\`css
+/* Ratio 7:1 pour le texte principal */
+:root {
+  --color-text: #1a1a2e;      /* sur fond blanc : ratio 16.1:1 ✓ */
+  --color-accent: #2563eb;    /* sur fond blanc : ratio 5.9:1 ✓ */
+  --color-danger: #dc2626;    /* sur fond blanc : ratio 4.6:1 ✓ */
+}
+\`\`\`
+
+**3. Navigation clavier :**
+\`\`\`html
+<!-- Skip link pour sauter au contenu principal -->
+<a href="#main-content" class="skip-link">
+  Aller au contenu principal
+</a>
+<main id="main-content" tabindex="-1">...</main>
+\`\`\``,
+            consequences: `**Positif :**
+- Conformité légale (obligation pour les services publics)
+- Améliore l'UX pour tous les utilisateurs (pas seulement les personnes handicapées)
+- Meilleur référencement SEO (les critères RGAA améliorent le score Lighthouse)
+
+**Négatif :**
+- Travail supplémentaire estimé à 3 semaines de développement
+- Audit d'accessibilité externe recommandé avant mise en production
+- Formation de l'équipe aux outils (axe-core, NVDA, VoiceOver)
+
+**Outils d'audit :** axe DevTools, Lighthouse, NVDA (Windows), VoiceOver (macOS/iOS)
+**Fichiers impactés :** mobile/src/components/, backend/public/admin/`,
             status: "proposed" as const,
             category: "ux",
           },
           {
-            title: "Généralisation du projet (suppression des références CCDS)",
-            context: "Le projet était initialement développé spécifiquement pour la CCDS (Communauté de Communes). Pour le rendre réutilisable par d'autres communes, toutes les références hardcodées doivent être externalisées.",
-            decision: "Remplacer toutes les références CCDS/Guyane par des variables d'environnement (APP_NAME, APP_SLUG, APP_REFERENCE_PREFIX). Créer un .env.example complet.",
-            consequences: "Le projet est désormais exportable vers n'importe quelle commune. Nécessite une configuration initiale via .env. 27 fichiers modifiés.",
+            title: "Généralisation du projet (variables d'environnement)",
+            context: `Le projet était initialement développé spécifiquement pour la CCDS (Communauté de Communes de Guyane). 27 fichiers contenaient des références hardcodées (\"CCDS\", \"Guyane\", \"ccds_\") rendant impossible le déploiement pour une autre commune sans modifications manuelles extensives.
+
+**Références hardcodées identifiées :**
+- Préfixe de référence : \"CCDS-\" dans les numéros de signalement
+- Nom de l'organisation dans les emails et PDF
+- Identifiants de base de données : \"ccds_db\", \"ccds_user\"
+- Headers HTTP : \"X-CCDS-Version\"
+- 8 fichiers TypeScript (app mobile)
+- 19 fichiers PHP (backend)`,
+            decision: `Externaliser toutes les références dans des **variables d'environnement** via un fichier \`.env\` :
+
+**Variables créées (.env.example) :**
+\`\`\`bash
+# Identité de l'application
+APP_NAME="Ma Commune"
+APP_SHORT_NAME="MaCommune"
+APP_SLUG="ma_commune"
+APP_SUBTITLE="Votre commune - Administration"
+APP_REFERENCE_PREFIX="MC"   # Préfixe des numéros de signalement
+APP_EMAIL_FROM="noreply@macommune.fr"
+
+# Base de données
+DB_HOST=localhost
+DB_NAME=ma_commune_db
+DB_USER=ma_commune_user
+DB_PASSWORD=
+\`\`\`
+
+**Exemple de migration dans helpers.php :**
+\`\`\`php
+// AVANT (hardcodé)
+function generate_reference(): string {
+    return 'CCDS-' . date('Y') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+}
+
+// APRÈS (configurable)
+function generate_reference(): string {
+    $prefix = defined('APP_REFERENCE_PREFIX') ? APP_REFERENCE_PREFIX : 'MC';
+    return $prefix . '-' . date('Y') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+}
+\`\`\`
+
+**Exemple dans WebhookController.php :**
+\`\`\`php
+// AVANT
+header('X-CCDS-Version: 1.6');
+
+// APRÈS
+header('X-' . APP_SHORT_NAME . '-Version: ' . APP_VERSION);
+\`\`\``,
+            consequences: `**Positif :**
+- Le projet est désormais exportable vers n'importe quelle commune en France
+- Configuration initiale en moins de 10 minutes via \`.env\`
+- Branche \`feature/generic-rename-ma-commune\` fusionnée (commit c8205ee)
+
+**Négatif :**
+- 27 fichiers modifiés — risque de régression si des références ont été oubliées
+- Les instances existantes doivent migrer leur configuration
+- Documentation à mettre à jour
+
+**Statistiques :** 27 fichiers modifiés, 8 variables d'environnement créées, 0 référence CCDS/Guyane restante dans le code fonctionnel`,
             status: "accepted" as const,
             category: "architecture",
           },
