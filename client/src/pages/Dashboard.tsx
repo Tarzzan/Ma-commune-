@@ -84,8 +84,9 @@ export default function Dashboard() {
     { projectId: activeProject?.id ?? 0 },
     { enabled: !!activeProject }
   );
+  const [velocityDays, setVelocityDays] = useState<7 | 14 | 30>(14);
   const { data: velocity = [] } = trpc.actions.velocity.useQuery(
-    { projectId: activeProject?.id ?? 0, days: 14 },
+    { projectId: activeProject?.id ?? 0, days: velocityDays },
     { enabled: !!activeProject }
   );
 
@@ -160,7 +161,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-indigo-400" />
-            <h2 className="font-semibold text-sm">Vélocité Git — 14 derniers jours</h2>
+            <h2 className="font-semibold text-sm">Vélocité Git — {velocityDays} derniers jours</h2>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs text-muted-foreground">
@@ -169,6 +170,22 @@ export default function Dashboard() {
             <span className="text-xs font-semibold text-indigo-400">
               {velocity.filter(d => d.count > 0).length} jour{velocity.filter(d => d.count > 0).length !== 1 ? "s" : ""} actif{velocity.filter(d => d.count > 0).length !== 1 ? "s" : ""}
             </span>
+            {/* Sélecteur de période */}
+            <div className="flex items-center gap-1 ml-2">
+              {([7, 14, 30] as const).map((d) => (
+                <button
+                  key={d}
+                  onClick={() => setVelocityDays(d)}
+                  className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
+                    velocityDays === d
+                      ? "bg-indigo-500 text-white"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  {d}j
+                </button>
+              ))}
+            </div>
           </div>
         </div>
         <div className="px-5 py-4">
