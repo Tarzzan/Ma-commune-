@@ -16,6 +16,7 @@ import {
   Moon,
   Settings,
   Shield,
+  Smartphone,
   Sun,
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -36,6 +37,7 @@ const navItems = [
   { path: "/ideas", icon: Brain, label: "Arbre des Idées", color: "text-orange-400" },
   { path: "/report", icon: FileText, label: "Rapport PDF", color: "text-cyan-400" },
   { path: "/arch-diff", icon: GitCompare, label: "Comparaison", color: "text-teal-400" },
+  { path: "/mobile", icon: Smartphone, label: "Mobile", color: "text-purple-400" },
 ];
 
 function NavItem({ item, collapsed }: { item: typeof navItems[0]; collapsed: boolean }) {

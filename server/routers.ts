@@ -1203,5 +1203,34 @@ header('X-' . APP_SHORT_NAME . '-Version: ' . APP_VERSION);
       }
     }),
   }),
+  mobile: router({
+    connectionCheck: protectedProcedure.query(async () => {
+      const { getExpoStatus, getAppleStatus } = await import("./mobileIntegration");
+      const [expo, apple] = await Promise.all([getExpoStatus(), getAppleStatus()]);
+      return {
+        expo: {
+          connected: expo.connected,
+          username: expo.username,
+          email: expo.email,
+          appName: expo.appName,
+          appSlug: expo.appSlug,
+          error: expo.error,
+        },
+        apple: {
+          connected: apple.connected,
+          appsCount: apple.apps.length,
+          error: apple.error,
+        },
+      };
+    }),
+    expoStatus: protectedProcedure.query(async () => {
+      const { getExpoStatus } = await import("./mobileIntegration");
+      return getExpoStatus();
+    }),
+    appleStatus: protectedProcedure.query(async () => {
+      const { getAppleStatus } = await import("./mobileIntegration");
+      return getAppleStatus();
+    }),
+  }),
 });
 export type AppRouter = typeof appRouter;

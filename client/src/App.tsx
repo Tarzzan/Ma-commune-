@@ -15,6 +15,7 @@ import UICode from "./pages/UICode";
 import Ideas from "./pages/Ideas";
 import Report from "./pages/Report";
 import ArchDiff from "./pages/ArchDiff";
+import Mobile from "./pages/Mobile";
 
 function Router() {
   return (
@@ -35,6 +36,7 @@ function Router() {
             <Route path="/ideas" component={Ideas} />
             <Route path="/report" component={Report} />
             <Route path="/arch-diff" component={ArchDiff} />
+            <Route path="/mobile" component={Mobile} />
             <Route path="/404" component={NotFound} />
             <Route component={NotFound} />
           </Switch>
