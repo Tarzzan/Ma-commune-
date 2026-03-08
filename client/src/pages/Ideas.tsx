@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Brain, Plus, X, Rocket, CheckSquare, Trash2, ListTodo } from "lucide-react";
+import { Brain, Plus, X, Rocket, CheckSquare, Trash2, ListTodo, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -84,6 +84,18 @@ export default function Ideas() {
     { projectId: activeProject?.id ?? 0 },
     { enabled: !!activeProject }
   );
+
+  const seedIdeas = trpc.ideas.seed.useMutation({
+    onSuccess: (res) => {
+      if (res.seeded > 0) {
+        toast.success(`${res.seeded} idées v1.3 ajoutées à l'arbre !`);
+        utils.ideas.list.invalidate();
+      } else {
+        toast.info(res.message);
+      }
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   const { data: taskList = [] } = trpc.ideas.tasks.useQuery(
     { projectId: activeProject?.id ?? 0 },
@@ -207,6 +219,15 @@ export default function Ideas() {
           >
             <ListTodo className="w-4 h-4 mr-2" />
             Tâches ({taskList.length})
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => seedIdeas.mutate({ projectId: activeProject.id })}
+            disabled={seedIdeas.isPending}
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            {seedIdeas.isPending ? "Chargement…" : "Idées v1.3"}
           </Button>
           <Button size="sm" onClick={() => setShowAdd(!showAdd)}>
             <Plus className="w-4 h-4 mr-2" />

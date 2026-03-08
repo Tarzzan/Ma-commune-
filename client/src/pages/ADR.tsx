@@ -12,12 +12,22 @@ import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
+const CATEGORIES = [
+  { value: "architecture", label: "Architecture", color: "text-indigo-500" },
+  { value: "securite", label: "Sécurité", color: "text-red-500" },
+  { value: "performance", label: "Performance", color: "text-yellow-500" },
+  { value: "infrastructure", label: "Infrastructure", color: "text-green-500" },
+  { value: "ux", label: "UX / Interface", color: "text-purple-500" },
+  { value: "donnees", label: "Données", color: "text-blue-500" },
+];
+
 const schema = z.object({
   title: z.string().min(1, "Titre requis"),
   context: z.string().optional(),
   decision: z.string().min(1, "Décision requise"),
   consequences: z.string().optional(),
   status: z.enum(["proposed", "accepted", "deprecated", "superseded"]),
+  category: z.string().default("architecture"),
 });
 type FormData = z.infer<typeof schema>;
 
@@ -33,6 +43,7 @@ export default function ADR() {
   const activeProject = projectList[0];
   const [showForm, setShowForm] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [filterCategory, setFilterCategory] = useState<string>("all");
   const utils = trpc.useUtils();
 
   const { data: adrList = [], isLoading } = trpc.adr.list.useQuery(
@@ -59,8 +70,8 @@ export default function ADR() {
   });
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: { status: "proposed" },
+    resolver: zodResolver(schema) as any,
+    defaultValues: { status: "proposed", category: "architecture" },
   });
 
   const onSubmit = (data: FormData) => {
@@ -95,6 +106,35 @@ export default function ADR() {
         </Button>
       </div>
 
+      {/* Category filter */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          onClick={() => setFilterCategory("all")}
+          className={cn("text-xs px-3 py-1 rounded-full border transition-colors",
+            filterCategory === "all" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"
+          )}
+        >
+          Toutes ({adrList.length})
+        </button>
+        {CATEGORIES.map(cat => {
+          const count = adrList.filter(a => (a as any).category === cat.value).length;
+          return (
+            <button
+              key={cat.value}
+              onClick={() => setFilterCategory(cat.value)}
+              className={cn("text-xs px-3 py-1 rounded-full border transition-colors",
+                filterCategory === cat.value ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"
+              )}
+            >
+              {cat.label} ({count})
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Status summary — placeholder closing */}
+      {false && null}
+
       {/* Status summary */}
       <div className="grid grid-cols-4 gap-3">
         {Object.entries(STATUS_CONFIG).map(([status, cfg]) => {
@@ -117,10 +157,20 @@ export default function ADR() {
         <div className="bg-card border border-primary/30 rounded-xl p-5 space-y-4">
           <h2 className="font-semibold text-sm">Nouvelle décision d'architecture</h2>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Titre *</label>
-              <Input {...register("title")} placeholder="Utiliser tRPC pour les communications API" className="bg-background" />
-              {errors.title && <p className="text-xs text-destructive">{errors.title.message}</p>}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Titre *</label>
+                <Input {...register("title")} placeholder="Utiliser tRPC pour les communications API" className="bg-background" />
+                {errors.title && <p className="text-xs text-destructive">{errors.title.message}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Catégorie</label>
+                <select {...register("category")} className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm">
+                  {CATEGORIES.map(cat => (
+                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
@@ -159,10 +209,13 @@ export default function ADR() {
         </div>
       ) : (
         <div className="space-y-3">
-          {adrList.map((adr) => {
+          {adrList
+            .filter(a => filterCategory === "all" || (a as any).category === filterCategory)
+            .map((adr) => {
             const cfg = STATUS_CONFIG[adr.status];
             const Icon = cfg.icon;
             const isExpanded = expandedId === adr.id;
+            const catLabel = CATEGORIES.find(c => c.value === (adr as any).category)?.label ?? "Architecture";
             return (
               <div
                 key={adr.id}
@@ -179,6 +232,9 @@ export default function ADR() {
                       {formatDistanceToNow(new Date(adr.createdAt), { locale: fr, addSuffix: true })}
                     </p>
                   </div>
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded border border-border text-muted-foreground shrink-0 mr-1">
+                    {catLabel}
+                  </span>
                   <span className={cn("text-[10px] font-semibold px-2 py-1 rounded-full border shrink-0", cfg.color)}>
                     {cfg.label}
                   </span>

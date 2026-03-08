@@ -256,6 +256,7 @@ export const appRouter = router({
         decision: z.string().min(1),
         consequences: z.string().optional(),
         status: z.enum(["proposed", "accepted", "deprecated", "superseded"]).default("proposed"),
+        category: z.string().default("architecture"),
       }))
       .mutation(async ({ input }) => {
         const db = await getDb();
@@ -700,6 +701,41 @@ export const appRouter = router({
         if (!db) throw new Error("DB unavailable");
         await db.update(ideaTasks).set({ status: input.status }).where(eq(ideaTasks.id, input.id));
         return { success: true };
+      }),
+    seed: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        // Vérifier si des idées existent déjà
+        const existing = await db.select().from(ideas).where(eq(ideas.projectId, input.projectId)).limit(1);
+        if (existing.length > 0) return { success: true, seeded: 0, message: "Des idées existent déjà" };
+        // Fonctionnalités v1.3 de Ma Commune
+        const seedIdeas = [
+          // Accessibilité
+          { title: "Accessibilité inclusive (RGAA)", description: "Conformité RGAA 4.1 : lecteurs d'écran, navigation clavier, contrastes, sous-titres vidéo", color: "#f87171", positionX: 50, positionY: 50, status: "promising" as const },
+          // Signalements enrichis
+          { title: "Commentaires enrichis", description: "Mentions @utilisateur, pièces jointes (photos, PDF), réactions emoji sur les signalements", color: "#fbbf24", positionX: 350, positionY: 50, status: "exploring" as const },
+          { title: "Carte heatmap", description: "Visualisation de la densité des signalements par zone géographique sur la carte interactive", color: "#fb923c", positionX: 650, positionY: 50, status: "exploring" as const },
+          // Tableau de bord citoyen
+          { title: "Tableau de bord citoyen", description: "Suivi personnel des signalements : historique, statuts, notifications de résolution", color: "#60a5fa", positionX: 50, positionY: 220, status: "promising" as const },
+          { title: "Notifications push", description: "Alertes en temps réel sur mobile quand un signalement change de statut", color: "#60a5fa", positionX: 350, positionY: 220, status: "exploring" as const },
+          // Gamification
+          { title: "Gamification citoyenne", description: "Badges et points de contribution : Citoyen actif, Signaleur du mois, Expert de quartier", color: "#34d399", positionX: 650, positionY: 220, status: "exploring" as const },
+          { title: "Classement citoyens", description: "Leaderboard mensuel des citoyens les plus actifs dans chaque quartier", color: "#34d399", positionX: 950, positionY: 220, status: "exploring" as const },
+          // App mobile
+          { title: "App mobile React Native", description: "Application mobile cross-platform (iOS/Android) avec géolocalisation et photo directe", color: "#a78bfa", positionX: 50, positionY: 390, status: "promising" as const },
+          { title: "Mode hors-ligne", description: "Saisie de signalements sans connexion, synchronisation automatique au retour du réseau", color: "#a78bfa", positionX: 350, positionY: 390, status: "exploring" as const },
+          // Administration
+          { title: "Tableau de bord admin avancé", description: "Statistiques détaillées : temps moyen de résolution, taux de satisfaction, évolution mensuelle", color: "#f472b6", positionX: 650, positionY: 390, status: "exploring" as const },
+          { title: "Export données CSV/PDF", description: "Export des rapports d'incidents pour les réunions municipales et les comptes-rendus officiels", color: "#f472b6", positionX: 950, positionY: 390, status: "exploring" as const },
+        ];
+        let seeded = 0;
+        for (const idea of seedIdeas) {
+          await db.insert(ideas).values({ ...idea, projectId: input.projectId });
+          seeded++;
+        }
+        return { success: true, seeded, message: `${seeded} idées v1.3 ajoutées` };
       }),
   }),
 });
