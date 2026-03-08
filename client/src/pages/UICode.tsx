@@ -30,6 +30,7 @@ interface UiElement {
   y: number;
   width: number;
   height: number;
+  sourceFile?: string;
 }
 
 interface CodeMatch {
@@ -340,6 +341,7 @@ export default function UICode() {
   // Analyze tab state
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [elements, setElements] = useState<UiElement[]>([]);
+  const [activeScreenLabel, setActiveScreenLabel] = useState<string>("");
   const [selectedElement, setSelectedElement] = useState<UiElement | null>(null);
   const [codeMatches, setCodeMatches] = useState<CodeMatch[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -394,6 +396,7 @@ export default function UICode() {
       imageUrl,
       projectId: activeProject?.id ?? 0,
       localPath: activeProject?.localPath ?? "",
+      screenLabel: activeScreenLabel || undefined,
     });
   };
 
@@ -413,6 +416,7 @@ export default function UICode() {
   // Charger un screenshot Ma Commune dans l'onglet Analyser
   const handleLoadScreenshot = (screenshot: ScreenshotEntry) => {
     setImageUrl(screenshot.url);
+    setActiveScreenLabel(screenshot.label);
     setElements([]);
     setCodeMatches([]);
     setSelectedElement(null);
@@ -806,14 +810,22 @@ export default function UICode() {
                   </Button>
                 </div>
                 {selectedElement && (
-                  <div className="flex items-center gap-2 bg-secondary/50 rounded-lg px-3 py-2">
-                    <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded border", ELEMENT_LABEL_COLORS[selectedElement.type] ?? ELEMENT_LABEL_COLORS.other)}>
-                      {selectedElement.type}
-                    </span>
-                    <span className="text-xs truncate">{selectedElement.label}</span>
-                    <button onClick={() => setSelectedElement(null)} className="ml-auto text-muted-foreground hover:text-foreground">
-                      <X className="w-3 h-3" />
-                    </button>
+                  <div className="bg-secondary/50 rounded-lg px-3 py-2 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded border", ELEMENT_LABEL_COLORS[selectedElement.type] ?? ELEMENT_LABEL_COLORS.other)}>
+                        {selectedElement.type}
+                      </span>
+                      <span className="text-xs truncate flex-1">{selectedElement.label}</span>
+                      <button onClick={() => setSelectedElement(null)} className="ml-auto text-muted-foreground hover:text-foreground">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                    {selectedElement.sourceFile && (
+                      <div className="flex items-center gap-1.5">
+                        <FileCode className="w-3 h-3 text-violet-400 shrink-0" />
+                        <span className="text-[10px] font-mono text-violet-400 truncate">{selectedElement.sourceFile}</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -829,12 +841,17 @@ export default function UICode() {
                         <button
                           key={el.id}
                           onClick={() => handleElementClick(el)}
-                          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/30 hover:bg-secondary/60 transition-colors text-left"
+                          className="w-full flex flex-col gap-0.5 px-3 py-2 rounded-lg bg-secondary/30 hover:bg-secondary/60 transition-colors text-left"
                         >
-                          <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded border shrink-0", ELEMENT_LABEL_COLORS[el.type] ?? ELEMENT_LABEL_COLORS.other)}>
-                            {el.type}
-                          </span>
-                          <span className="text-xs truncate">{el.label}</span>
+                          <div className="flex items-center gap-2">
+                            <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded border shrink-0", ELEMENT_LABEL_COLORS[el.type] ?? ELEMENT_LABEL_COLORS.other)}>
+                              {el.type}
+                            </span>
+                            <span className="text-xs truncate">{el.label}</span>
+                          </div>
+                          {el.sourceFile && (
+                            <span className="text-[9px] font-mono text-violet-400 truncate pl-1">{el.sourceFile}</span>
+                          )}
                         </button>
                       ))}
                     </div>

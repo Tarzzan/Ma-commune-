@@ -891,13 +891,36 @@ header('X-' . APP_SHORT_NAME . '-Version: ' . APP_VERSION);
         imageUrl: z.string(),
         projectId: z.number(),
         localPath: z.string(),
+        screenLabel: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
+        // Lire un extrait du code source pertinent si localPath est fourni
+        let codeContext = "";
+        if (input.localPath) {
+          try {
+            const { searchInFiles } = await import("./analysis");
+            // Chercher les fichiers PHP et React Native liés à cet écran
+            const label = input.screenLabel ?? "";
+            const keywords = label ? label.split(/[\s&]+/).filter(w => w.length > 3) : ["incident", "signalement"];
+            const allMatches: string[] = [];
+            for (const kw of keywords.slice(0, 3)) {
+              const matches = await searchInFiles(input.localPath, kw);
+              matches.slice(0, 5).forEach(m => {
+                allMatches.push(`// ${m.file}:${m.line}\n${m.context.join("\n")}`);
+              });
+            }
+            if (allMatches.length > 0) {
+              codeContext = `\n\nContexte du code source (${input.localPath}):\n\`\`\`\n${allMatches.slice(0, 10).join("\n---\n")}\n\`\`\``;
+            }
+          } catch {
+            // Ignorer les erreurs de lecture de fichiers
+          }
+        }
         const response = await invokeLLM({
           messages: [
             {
               role: "system",
-              content: `Tu es un expert en analyse d'interfaces utilisateur. Analyse le screenshot fourni et identifie tous les éléments interactifs visibles (boutons, liens, champs de saisie, menus, onglets, etc.). Pour chaque élément, fournis ses coordonnées relatives (en pourcentage de la largeur/hauteur de l'image), son texte ou label, et son type. Réponds UNIQUEMENT en JSON valide.`,
+              content: `Tu es un expert en analyse d'interfaces utilisateur et en développement PHP/React Native. Analyse le screenshot fourni et identifie tous les éléments interactifs visibles. Pour chaque élément, fournis ses coordonnées relatives (en pourcentage), son texte/label, son type, et si possible le nom du fichier source correspondant dans le code. Réponds UNIQUEMENT en JSON valide.${codeContext}`,
             },
             {
               role: "user",
@@ -908,7 +931,7 @@ header('X-' . APP_SHORT_NAME . '-Version: ' . APP_VERSION);
                 },
                 {
                   type: "text",
-                  text: "Identifie tous les éléments interactifs de cette interface. Retourne un JSON avec la structure: { elements: [{ id: string, type: 'button'|'link'|'input'|'menu'|'tab'|'other', label: string, x: number, y: number, width: number, height: number }] } où x,y,width,height sont des pourcentages (0-100).",
+                  text: `Analyse cette interface${input.screenLabel ? ` (${input.screenLabel})` : ""}. Identifie tous les éléments interactifs. Retourne un JSON avec: { elements: [{ id: string, type: 'button'|'link'|'input'|'menu'|'tab'|'other', label: string, x: number, y: number, width: number, height: number, sourceFile?: string }] } où x,y,width,height sont des pourcentages (0-100). Pour sourceFile, indique le fichier PHP ou React Native le plus probable.`,
                 },
               ],
             },
@@ -933,8 +956,9 @@ header('X-' . APP_SHORT_NAME . '-Version: ' . APP_VERSION);
                         y: { type: "number" },
                         width: { type: "number" },
                         height: { type: "number" },
+                        sourceFile: { type: "string" },
                       },
-                      required: ["id", "type", "label", "x", "y", "width", "height"],
+                      required: ["id", "type", "label", "x", "y", "width", "height", "sourceFile"],
                       additionalProperties: false,
                     },
                   },
@@ -947,7 +971,7 @@ header('X-' . APP_SHORT_NAME . '-Version: ' . APP_VERSION);
         });
         const content = response.choices[0]?.message?.content ?? "{}";
         const parsed = JSON.parse(typeof content === "string" ? content : JSON.stringify(content));
-        return parsed as { elements: Array<{ id: string; type: string; label: string; x: number; y: number; width: number; height: number }> };
+        return parsed as { elements: Array<{ id: string; type: string; label: string; x: number; y: number; width: number; height: number; sourceFile: string }> };
       }),
     searchInCode: protectedProcedure
       .input(z.object({ localPath: z.string(), searchText: z.string() }))

@@ -81,6 +81,8 @@ export default function PiplLayout({ children }: { children: React.ReactNode }) 
   const [timedOut, setTimedOut] = useStateTimeout(false);
   const [collapsed, setCollapsed] = useState(false);
   const { theme, toggleTheme, switchable } = useTheme();
+  const { data: projectList = [] } = trpc.projects.list.useQuery(undefined, { enabled: isAuthenticated });
+  const activeProject = projectList.find(p => p.isActive) ?? projectList[0];
   const logout = trpc.auth.logout.useMutation({
     onSuccess: () => { window.location.href = "/login"; },
   });
@@ -142,10 +144,19 @@ export default function PiplLayout({ children }: { children: React.ReactNode }) 
         {/* Project indicator */}
         {!collapsed && (
           <div className="px-3 py-2 border-t border-border">
-            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-secondary/50">
-              <FolderOpen className="w-3 h-3 text-muted-foreground shrink-0" />
-              <span className="text-xs text-muted-foreground truncate">Aucun projet actif</span>
-            </div>
+            <Link href="/config">
+              <div className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-secondary/50 hover:bg-secondary cursor-pointer transition-colors">
+                <FolderOpen className={`w-3 h-3 shrink-0 ${activeProject ? 'text-green-400' : 'text-muted-foreground'}`} />
+                {activeProject ? (
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-foreground truncate leading-tight">{activeProject.name}</p>
+                    <p className="text-[10px] text-muted-foreground truncate font-mono leading-tight">{activeProject.localPath.split('/').pop()}</p>
+                  </div>
+                ) : (
+                  <span className="text-xs text-muted-foreground truncate">Aucun projet actif</span>
+                )}
+              </div>
+            </Link>
           </div>
         )}
 
