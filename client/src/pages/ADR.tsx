@@ -11,7 +11,8 @@ import { Shield, Plus, CheckCircle2, Clock, Archive, RefreshCw } from "lucide-re
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { Streamdown } from "streamdown";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const CATEGORIES = [
   { value: "architecture", label: "Architecture", color: "text-indigo-500" },
@@ -267,21 +268,21 @@ export default function ADR() {
                       <div>
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Contexte</p>
                         <div className="text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none prose-code:bg-muted prose-code:px-1 prose-code:rounded prose-pre:bg-muted prose-pre:text-xs">
-                          <Streamdown>{adr.context}</Streamdown>
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{adr.context}</ReactMarkdown>
                         </div>
                       </div>
                     )}
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Décision</p>
                       <div className="text-sm prose prose-sm dark:prose-invert max-w-none prose-code:bg-muted prose-code:px-1 prose-code:rounded prose-pre:bg-muted prose-pre:text-xs">
-                        <Streamdown>{adr.decision}</Streamdown>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{adr.decision}</ReactMarkdown>
                       </div>
                     </div>
                     {adr.consequences && (
                       <div>
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Conséquences</p>
                         <div className="text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none prose-code:bg-muted prose-code:px-1 prose-code:rounded prose-pre:bg-muted prose-pre:text-xs">
-                          <Streamdown>{adr.consequences}</Streamdown>
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{adr.consequences}</ReactMarkdown>
                         </div>
                       </div>
                     )}
