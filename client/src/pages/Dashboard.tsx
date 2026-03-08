@@ -7,6 +7,7 @@ import {
   Clock,
   Cpu,
   GitCommit,
+  Server,
   Shield,
   TrendingUp,
   Zap,
@@ -84,6 +85,10 @@ export default function Dashboard() {
     { projectId: activeProject?.id ?? 0 },
     { enabled: !!activeProject }
   );
+  const { data: servicesData } = trpc.services.status.useQuery(undefined, {
+    refetchInterval: 60_000, // Rafraîchissement toutes les 60s
+  });
+
   const [velocityDays, setVelocityDays] = useState<7 | 14 | 30>(14);
   const { data: velocity = [] } = trpc.actions.velocity.useQuery(
     { projectId: activeProject?.id ?? 0, days: velocityDays },
@@ -301,6 +306,47 @@ export default function Dashboard() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </div>
+
+          {/* Services status */}
+          <div className="bg-card border border-border rounded-xl p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Server className="w-4 h-4 text-green-400" />
+              <h3 className="font-semibold text-sm">Statut des services</h3>
+              {servicesData && (
+                <span className="ml-auto text-[10px] text-muted-foreground">
+                  Mis à jour il y a quelques secondes
+                </span>
+              )}
+            </div>
+            {!servicesData ? (
+              <div className="space-y-2">
+                {[1,2,3,4].map(i => <div key={i} className="h-5 bg-muted rounded animate-pulse" />)}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {servicesData.services.map((svc) => (
+                  <div key={svc.name} className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full shrink-0 ${
+                      svc.status === "up" ? "bg-green-400" :
+                      svc.status === "down" ? "bg-red-400" : "bg-yellow-400"
+                    }`} />
+                    <span className="text-xs flex-1">{svc.name}</span>
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                      svc.status === "up" ? "text-green-600 bg-green-400/10" :
+                      svc.status === "down" ? "text-red-500 bg-red-400/10" : "text-yellow-500 bg-yellow-400/10"
+                    }`}>
+                      {svc.status === "up" ? "En ligne" : svc.status === "down" ? "Hors ligne" : "Inconnu"}
+                    </span>
+                  </div>
+                ))}
+                {servicesData.lastAlert && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <p className="text-[10px] text-red-400 truncate">⚠ {servicesData.lastAlert}</p>
+                  </div>
+                )}
               </div>
             )}
           </div>

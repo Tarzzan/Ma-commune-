@@ -62,6 +62,19 @@ export default function ADR() {
     onError: (e) => toast.error(e.message),
   });
 
+  const seedAdr = trpc.adr.seed.useMutation({
+    onSuccess: (data) => {
+      if (data.count === 0) {
+        toast.info("Des ADR existent déjà — aucun ajout");
+      } else {
+        toast.success(`${data.count} ADR de démonstration créées`);
+        utils.adr.list.invalidate();
+        utils.actions.list.invalidate();
+      }
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   const updateStatus = trpc.adr.updateStatus.useMutation({
     onSuccess: () => {
       toast.success("Statut mis à jour");
@@ -100,10 +113,17 @@ export default function ADR() {
             Architecture Decision Records (ADR) · {adrList.length} décision(s)
           </p>
         </div>
-        <Button size="sm" onClick={() => setShowForm(!showForm)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nouvelle décision
-        </Button>
+        <div className="flex items-center gap-2">
+          {adrList.length === 0 && (
+            <Button size="sm" variant="outline" onClick={() => activeProject && seedAdr.mutate({ projectId: activeProject.id })} disabled={seedAdr.isPending}>
+              {seedAdr.isPending ? "Chargement..." : "🌱 ADR Ma Commune"}
+            </Button>
+          )}
+          <Button size="sm" onClick={() => setShowForm(!showForm)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nouvelle décision
+          </Button>
+        </div>
       </div>
 
       {/* Category filter */}

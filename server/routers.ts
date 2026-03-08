@@ -92,6 +92,39 @@ export const appRouter = router({
       }),
   }),
 
+  // ── Services Status ──
+  services: router({
+    status: protectedProcedure.query(async () => {
+      const { execSync } = await import("child_process");
+      const checkService = (name: string, cmd: string, successPattern?: string): { name: string; status: "up" | "down" | "unknown"; detail: string } => {
+        try {
+          const out = execSync(cmd, { timeout: 5000, encoding: "utf8" }).trim();
+          const ok = successPattern ? out.includes(successPattern) : out.length > 0;
+          return { name, status: ok ? "up" : "down", detail: out.slice(0, 80) };
+        } catch {
+          return { name, status: "down", detail: "Erreur de vérification" };
+        }
+      };
+
+      const pipl = checkService("PIPL", "pm2 jlist 2>/dev/null | node -e \"const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));const p=d.find(x=>x.name==='pipl');process.stdout.write(p?p.pm2_env.status:'not found')\"", "online");
+      const webhook = checkService("Webhook", "pm2 jlist 2>/dev/null | node -e \"const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));const p=d.find(x=>x.name==='pipl-webhook');process.stdout.write(p?p.pm2_env.status:'not found')\"", "online");
+      const mysql = checkService("MySQL", "systemctl is-active mysql 2>/dev/null || systemctl is-active mariadb 2>/dev/null", "active");
+      const nginx = checkService("Nginx", "systemctl is-active nginx 2>/dev/null", "active");
+
+      // Lire les dernières alertes uptime
+      let lastAlert = null;
+      try {
+        const { readFileSync } = await import("fs");
+        const alertLog = "/home/ubuntu/uptime-alerts.log";
+        const content = readFileSync(alertLog, "utf8").trim();
+        const lines = content.split("\n").filter(Boolean);
+        lastAlert = lines[lines.length - 1] ?? null;
+      } catch { /* pas d'alertes */ }
+
+      return { services: [pipl, webhook, mysql, nginx], lastAlert, checkedAt: new Date() };
+    }),
+  }),
+
   // ── Projects ──
   projects: router({
     list: protectedProcedure.query(async () => {
@@ -290,6 +323,70 @@ export const appRouter = router({
           .set({ status: input.status })
           .where(eq(architectureDecisions.id, input.id));
         return { success: true };
+      }),
+    seed: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        // Vérifier si des ADR existent déjà
+        const existing = await db.select().from(architectureDecisions).where(eq(architectureDecisions.projectId, input.projectId));
+        if (existing.length > 0) return { success: true, count: 0, message: "Des ADR existent déjà" };
+        const seedData = [
+          {
+            title: "Migration vers PHP 8.4",
+            context: "Le projet Ma Commune utilisait PHP 7.4 en production. PHP 7.4 est en fin de vie depuis novembre 2022. Les nouvelles fonctionnalités (fibers, enums, readonly properties) améliorent la qualité du code.",
+            decision: "Migrer vers PHP 8.4 sur le VPS Ubuntu 22.04 via le dépôt ondrej/php. Utiliser PHP-FPM avec Nginx. Mettre à jour toutes les dépendances Composer.",
+            consequences: "Performance améliorée (+15% selon benchmarks). Compatibilité avec les nouvelles bibliothèques. Nécessite la mise à jour des extensions (pdo_mysql, mbstring, gd, zip).",
+            status: "accepted" as const,
+            category: "infrastructure",
+          },
+          {
+            title: "Architecture REST API PHP sans framework",
+            context: "Choix entre Laravel, Symfony, Slim et une API PHP native. Le projet est de taille moyenne avec des contraintes de performance sur un VPS 2 vCPU.",
+            decision: "Implémenter une API REST PHP native avec routage manuel, PDO pour la base de données, et JWT pour l'authentification. Pas de framework lourd.",
+            consequences: "Empreinte mémoire minimale (<10 MB par requête). Courbe d'apprentissage plus élevée pour les nouveaux contributeurs. Flexibilité totale sur l'architecture.",
+            status: "accepted" as const,
+            category: "architecture",
+          },
+          {
+            title: "Authentification 2FA par email (TOTP optionnel)",
+            context: "La plateforme gère des données citoyennes sensibles. Une authentification simple par mot de passe est insuffisante pour les comptes administrateurs.",
+            decision: "Implémenter un système 2FA par email (code OTP 6 chiffres, validité 15 min) pour les admins. TOTP (Google Authenticator) prévu en v1.3.",
+            consequences: "Sécurité renforcée pour les comptes privilégiés. Dépendance au service email (SMTP). Expérience utilisateur légèrement alourdie.",
+            status: "accepted" as const,
+            category: "securite",
+          },
+          {
+            title: "Conformité RGAA 4.1 pour l'accessibilité",
+            context: "Ma Commune est une plateforme citoyenne publique. La loi française (RGAA) impose l'accessibilité numérique pour les services publics. L'application mobile doit être utilisable par les personnes en situation de handicap.",
+            decision: "Adopter le référentiel RGAA 4.1 comme standard d'accessibilité. Implémenter les critères de niveau AA. Audit d'accessibilité prévu avant la mise en production v1.3.",
+            consequences: "Travail supplémentaire estimé à 3 semaines. Améliore l'UX pour tous les utilisateurs. Obligation légale pour les services publics.",
+            status: "proposed" as const,
+            category: "ux",
+          },
+          {
+            title: "Généralisation du projet (suppression des références CCDS)",
+            context: "Le projet était initialement développé spécifiquement pour la CCDS (Communauté de Communes). Pour le rendre réutilisable par d'autres communes, toutes les références hardcodées doivent être externalisées.",
+            decision: "Remplacer toutes les références CCDS/Guyane par des variables d'environnement (APP_NAME, APP_SLUG, APP_REFERENCE_PREFIX). Créer un .env.example complet.",
+            consequences: "Le projet est désormais exportable vers n'importe quelle commune. Nécessite une configuration initiale via .env. 27 fichiers modifiés.",
+            status: "accepted" as const,
+            category: "architecture",
+          },
+        ];
+        let count = 0;
+        for (const adr of seedData) {
+          const adrId = `ADR-${String(count + 1).padStart(3, "0")}`;
+          await db.insert(architectureDecisions).values({ ...adr, projectId: input.projectId, adrId });
+          count++;
+        }
+        await db.insert(actionsLog).values({
+          projectId: input.projectId,
+          actionType: "adr_created",
+          title: `${count} ADR de démonstration créées`,
+          result: "success",
+        });
+        return { success: true, count };
       }),
     linkToNode: protectedProcedure
       .input(z.object({ id: z.number(), nodeId: z.string().nullable() }))
