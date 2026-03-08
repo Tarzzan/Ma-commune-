@@ -1,9 +1,0 @@
-{
-  "query": "INSERT INTO settings (`key`, `value`) VALUES\n  ('expo_token', 'o7bG6AVv1CwFyZxRDSaxYcF78h6mlgsEkmpdcOzl'),\n  ('expo_app_id', 'a7334d51-b12a-46eb-bc2d-c9b847551f66'),\n  ('apple_key_id', 'M39QC8BPNK'),\n  ('apple_issuer_id', '6a5c2531-c26f-444b-88c5-bd62a7575c44')\nON DUPLICATE KEY UPDATE `value` = VALUES(`value`);",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3U1TnSqso1nEz6n.cb54e067cf4b --database RGNGtwCyvJxe74uKiqakNB --execute INSERT INTO settings (`key`, `value`) VALUES\n  ('expo_token', 'o7bG6AVv1CwFyZxRDSaxYcF78h6mlgsEkmpdcOzl'),\n  ('expo_app_id', 'a7334d51-b12a-46eb-bc2d-c9b847551f66'),\n  ('apple_key_id', 'M39QC8BPNK'),\n  ('apple_issuer_id', '6a5c2531-c26f-444b-88c5-bd62a7575c44')\nON DUPLICATE KEY UPDATE `value` = VALUES(`value`);",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 55
-}

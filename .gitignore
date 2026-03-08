@@ -108,3 +108,9 @@ temp/
 
 # Webdev artifacts (checkpoint zips, migrations, etc.)
 .webdev/
+
+# Manus internal files (can contain secrets)
+.manus/
+
+# Apple P8 key files (secrets)
+server/*.p8
