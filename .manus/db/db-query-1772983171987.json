@@ -1,0 +1,75 @@
+{
+  "query": "SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'ideas' ORDER BY ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3U1TnSqso1nEz6n.cb54e067cf4b --database RGNGtwCyvJxe74uKiqakNB --execute SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'ideas' ORDER BY ORDINAL_POSITION;",
+  "rows": [
+    {
+      "COLUMN_NAME": "id",
+      "COLUMN_TYPE": "int",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "COLUMN_NAME": "projectId",
+      "COLUMN_TYPE": "int",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "COLUMN_NAME": "parentId",
+      "COLUMN_TYPE": "int",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "COLUMN_NAME": "title",
+      "COLUMN_TYPE": "varchar(500)",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "COLUMN_NAME": "description",
+      "COLUMN_TYPE": "text",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "COLUMN_NAME": "status",
+      "COLUMN_TYPE": "enum('exploring','promising','in_progress','promoted','abandoned')",
+      "COLUMN_DEFAULT": "exploring"
+    },
+    {
+      "COLUMN_NAME": "priority",
+      "COLUMN_TYPE": "enum('haute','moyenne','basse')",
+      "COLUMN_DEFAULT": "moyenne"
+    },
+    {
+      "COLUMN_NAME": "category",
+      "COLUMN_TYPE": "varchar(50)",
+      "COLUMN_DEFAULT": "fonctionnalite"
+    },
+    {
+      "COLUMN_NAME": "positionX",
+      "COLUMN_TYPE": "int",
+      "COLUMN_DEFAULT": "0"
+    },
+    {
+      "COLUMN_NAME": "positionY",
+      "COLUMN_TYPE": "int",
+      "COLUMN_DEFAULT": "0"
+    },
+    {
+      "COLUMN_NAME": "color",
+      "COLUMN_TYPE": "varchar(20)",
+      "COLUMN_DEFAULT": "#58a6ff"
+    },
+    {
+      "COLUMN_NAME": "createdAt",
+      "COLUMN_TYPE": "timestamp",
+      "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+    },
+    {
+      "COLUMN_NAME": "updatedAt",
+      "COLUMN_TYPE": "timestamp",
+      "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\tCOLUMN_TYPE\tCOLUMN_DEFAULT\nid\tint\tNULL\nprojectId\tint\tNULL\nparentId\tint\tNULL\ntitle\tvarchar(500)\tNULL\ndescription\ttext\tNULL\nstatus\tenum('exploring','promising','in_progress','promoted','abandoned')\texploring\npriority\tenum('haute','moyenne','basse')\tmoyenne\ncategory\tvarchar(50)\tfonctionnalite\npositionX\tint\t0\npositionY\tint\t0\ncolor\tvarchar(20)\t#58a6ff\ncreatedAt\ttimestamp\tCURRENT_TIMESTAMP\nupdatedAt\ttimestamp\tCURRENT_TIMESTAMP\n",
+  "stderr": "",
+  "execution_time_ms": 53
+}

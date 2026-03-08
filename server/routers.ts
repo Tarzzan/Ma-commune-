@@ -979,6 +979,8 @@ header('X-' . APP_SHORT_NAME . '-Version: ' . APP_VERSION);
         positionX: z.number().default(0),
         positionY: z.number().default(0),
         color: z.string().default("#58a6ff"),
+        priority: z.enum(["haute", "moyenne", "basse"]).default("moyenne"),
+        category: z.string().default("fonctionnalite"),
       }))
       .mutation(async ({ input }) => {
         const db = await getDb();
@@ -991,6 +993,8 @@ header('X-' . APP_SHORT_NAME . '-Version: ' . APP_VERSION);
           positionX: input.positionX,
           positionY: input.positionY,
           color: input.color,
+          priority: input.priority,
+          category: input.category,
         });
         return { success: true, id: Number((result as any).insertId) };
       }),
@@ -1000,6 +1004,8 @@ header('X-' . APP_SHORT_NAME . '-Version: ' . APP_VERSION);
         title: z.string().optional(),
         description: z.string().optional(),
         status: z.enum(["exploring", "promising", "in_progress", "promoted", "abandoned"]).optional(),
+        priority: z.enum(["haute", "moyenne", "basse"]).optional(),
+        category: z.string().optional(),
         positionX: z.number().optional(),
         positionY: z.number().optional(),
         color: z.string().optional(),

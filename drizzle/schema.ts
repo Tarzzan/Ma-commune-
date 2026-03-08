@@ -99,6 +99,8 @@ export const ideas = mysqlTable("ideas", {
   title: varchar("title", { length: 500 }).notNull(),
   description: text("description"),
   status: mysqlEnum("status", ["exploring", "promising", "in_progress", "promoted", "abandoned"]).default("exploring").notNull(),
+  priority: mysqlEnum("priority", ["haute", "moyenne", "basse"]).default("moyenne").notNull(),
+  category: varchar("category", { length: 50 }).default("fonctionnalite").notNull(),
   positionX: int("positionX").default(0).notNull(),
   positionY: int("positionY").default(0).notNull(),
   color: varchar("color", { length: 20 }).default("#58a6ff").notNull(),

@@ -10,16 +10,16 @@ import {
   type NodeMouseHandler,
   MarkerType,
   Panel,
-  addEdge,
-  useNodesState,
-  useEdgesState,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Brain, Plus, X, Rocket, CheckSquare, Trash2, ListTodo, Sparkles } from "lucide-react";
+import {
+  Brain, Plus, X, Rocket, CheckSquare, Trash2, ListTodo,
+  Sparkles, Filter, ArrowUp, Minus, ArrowDown,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -38,19 +38,70 @@ const STATUS_LABELS: Record<string, string> = {
   abandoned: "Abandonnée",
 };
 
+const PRIORITY_COLORS: Record<string, string> = {
+  haute: "#f87171",
+  moyenne: "#fbbf24",
+  basse: "#60a5fa",
+};
+
+const PRIORITY_LABELS: Record<string, string> = {
+  haute: "Haute",
+  moyenne: "Moyenne",
+  basse: "Basse",
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  accessibilite: "Accessibilité",
+  engagement: "Engagement",
+  ux: "UX",
+  cartographie: "Cartographie",
+  mobile: "Mobile",
+  notifications: "Notifications",
+  analytics: "Analytics",
+  securite: "Sécurité",
+  api: "API",
+  pwa: "PWA",
+  fonctionnalite: "Fonctionnalité",
+};
+
+function PriorityBadge({ priority }: { priority: string }) {
+  const color = PRIORITY_COLORS[priority] ?? "#60a5fa";
+  const Icon = priority === "haute" ? ArrowUp : priority === "basse" ? ArrowDown : Minus;
+  return (
+    <div
+      className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold"
+      style={{ background: `${color}20`, color, border: `1px solid ${color}40` }}
+    >
+      <Icon className="w-2.5 h-2.5" />
+      {PRIORITY_LABELS[priority] ?? priority}
+    </div>
+  );
+}
+
 function IdeaNode({ data, selected }: { data: any; selected?: boolean }) {
   const color = data.color ?? STATUS_COLORS[data.status] ?? "#60a5fa";
+  const priorityColor = PRIORITY_COLORS[data.priority] ?? "#fbbf24";
   return (
     <div
       className={cn(
-        "rounded-xl border-2 px-4 py-3 min-w-[160px] max-w-[220px] cursor-pointer transition-all",
+        "rounded-xl border-2 px-4 py-3 min-w-[170px] max-w-[230px] cursor-pointer transition-all",
         selected ? "ring-2 ring-white/30 scale-105" : "hover:scale-102"
       )}
-      style={{
-        background: `${color}18`,
-        borderColor: `${color}60`,
-      }}
+      style={{ background: `${color}18`, borderColor: `${color}60` }}
     >
+      <div className="flex items-center justify-between mb-1.5">
+        <span
+          className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+          style={{ background: `${priorityColor}20`, color: priorityColor }}
+        >
+          {PRIORITY_LABELS[data.priority] ?? ""}
+        </span>
+        {data.category && (
+          <span className="text-[8px] text-muted-foreground">
+            {CATEGORY_LABELS[data.category] ?? data.category}
+          </span>
+        )}
+      </div>
       <p className="text-sm font-semibold text-foreground leading-tight">{data.label}</p>
       {data.description && (
         <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{data.description}</p>
@@ -76,11 +127,15 @@ export default function Ideas() {
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newColor, setNewColor] = useState("#60a5fa");
+  const [newPriority, setNewPriority] = useState<"haute" | "moyenne" | "basse">("moyenne");
+  const [newCategory, setNewCategory] = useState("fonctionnalite");
   const [promoteTasks, setPromoteTasks] = useState([{ title: "", description: "" }]);
   const [showTasks, setShowTasks] = useState(false);
+  const [filterPriority, setFilterPriority] = useState<string | null>(null);
+  const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const utils = trpc.useUtils();
 
-  const { data: ideaList = [], isLoading } = trpc.ideas.list.useQuery(
+  const { data: ideaList = [] } = trpc.ideas.list.useQuery(
     { projectId: activeProject?.id ?? 0 },
     { enabled: !!activeProject }
   );
@@ -122,9 +177,7 @@ export default function Ideas() {
   });
 
   const updateIdea = trpc.ideas.update.useMutation({
-    onSuccess: () => {
-      utils.ideas.list.invalidate();
-    },
+    onSuccess: () => utils.ideas.list.invalidate(),
   });
 
   const promoteIdea = trpc.ideas.promote.useMutation({
@@ -144,24 +197,39 @@ export default function Ideas() {
     onSuccess: () => utils.ideas.tasks.invalidate(),
   });
 
+  const filteredIdeas = useMemo(() => {
+    return ideaList.filter(idea => {
+      if (filterPriority && idea.priority !== filterPriority) return false;
+      if (filterCategory && idea.category !== filterCategory) return false;
+      return true;
+    });
+  }, [ideaList, filterPriority, filterCategory]);
+
+  const availableCategories = useMemo(() => {
+    const cats = new Set(ideaList.map(i => i.category).filter(Boolean));
+    return Array.from(cats) as string[];
+  }, [ideaList]);
+
   const flowNodes: Node[] = useMemo(() =>
-    ideaList.map((idea, i) => ({
+    filteredIdeas.map((idea, i) => ({
       id: String(idea.id),
       type: "ideaNode",
-      position: { x: idea.positionX || (i % 4) * 260, y: idea.positionY || Math.floor(i / 4) * 160 },
+      position: { x: idea.positionX || (i % 4) * 270, y: idea.positionY || Math.floor(i / 4) * 180 },
       data: {
         label: idea.title,
         description: idea.description,
         status: idea.status,
+        priority: idea.priority,
+        category: idea.category,
         color: idea.color,
         ideaId: idea.id,
       },
     })),
-    [ideaList]
+    [filteredIdeas]
   );
 
   const flowEdges: Edge[] = useMemo(() =>
-    ideaList
+    filteredIdeas
       .filter(i => i.parentId)
       .map(i => ({
         id: `e_${i.parentId}_${i.id}`,
@@ -170,7 +238,7 @@ export default function Ideas() {
         style: { stroke: "rgba(148,163,184,0.3)", strokeWidth: 1.5 },
         markerEnd: { type: MarkerType.ArrowClosed, color: "rgba(148,163,184,0.3)" },
       })),
-    [ideaList]
+    [filteredIdeas]
   );
 
   const onNodeClick: NodeMouseHandler = useCallback((_evt, node) => {
@@ -197,6 +265,9 @@ export default function Ideas() {
   const todoTasks = taskList.filter(t => t.status === "todo");
   const inProgressTasks = taskList.filter(t => t.status === "in_progress");
   const doneTasks = taskList.filter(t => t.status === "done");
+  const highCount = ideaList.filter(i => i.priority === "haute").length;
+  const medCount = ideaList.filter(i => i.priority === "moyenne").length;
+  const lowCount = ideaList.filter(i => i.priority === "basse").length;
 
   return (
     <div className="flex flex-col h-full">
@@ -209,14 +280,13 @@ export default function Ideas() {
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
             {ideaList.length} idée(s) · {taskList.length} tâche(s) promue(s)
+            {(filterPriority || filterCategory) && (
+              <span className="ml-2 text-orange-400">· {filteredIdeas.length} affichée(s)</span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowTasks(!showTasks)}
-          >
+          <Button variant="outline" size="sm" onClick={() => setShowTasks(!showTasks)}>
             <ListTodo className="w-4 h-4 mr-2" />
             Tâches ({taskList.length})
           </Button>
@@ -236,10 +306,67 @@ export default function Ideas() {
         </div>
       </div>
 
+      {/* Filter bar */}
+      <div className="flex items-center gap-3 px-6 py-2 border-b border-border bg-muted/30 shrink-0 flex-wrap">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Filter className="w-3.5 h-3.5" />
+          <span>Filtres :</span>
+        </div>
+        {/* Priority pills */}
+        {(["haute", "moyenne", "basse"] as const).map(p => {
+          const count = p === "haute" ? highCount : p === "moyenne" ? medCount : lowCount;
+          const Icon = p === "haute" ? ArrowUp : p === "basse" ? ArrowDown : Minus;
+          return (
+            <button
+              key={p}
+              onClick={() => setFilterPriority(filterPriority === p ? null : p)}
+              className={cn(
+                "flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border transition-all",
+                filterPriority === p ? "opacity-100 scale-105" : "opacity-50 hover:opacity-80"
+              )}
+              style={{
+                color: PRIORITY_COLORS[p],
+                borderColor: `${PRIORITY_COLORS[p]}50`,
+                background: filterPriority === p ? `${PRIORITY_COLORS[p]}20` : "transparent",
+              }}
+            >
+              <Icon className="w-2.5 h-2.5" />
+              {PRIORITY_LABELS[p]}
+              <span className="opacity-70">({count})</span>
+            </button>
+          );
+        })}
+        <div className="w-px h-4 bg-border" />
+        {/* Category pills */}
+        {availableCategories.map(cat => (
+          <button
+            key={cat}
+            onClick={() => setFilterCategory(filterCategory === cat ? null : cat)}
+            className={cn(
+              "text-[10px] px-2 py-0.5 rounded-full border transition-all",
+              filterCategory === cat
+                ? "bg-primary/10 text-primary border-primary/40 font-semibold"
+                : "text-muted-foreground border-border hover:border-primary/30 hover:text-foreground"
+            )}
+          >
+            {CATEGORY_LABELS[cat] ?? cat}
+          </button>
+        ))}
+        {(filterPriority || filterCategory) && (
+          <button
+            onClick={() => { setFilterPriority(null); setFilterCategory(null); }}
+            className="text-[10px] text-destructive hover:text-destructive/80 ml-auto flex items-center gap-1"
+          >
+            <X className="w-3 h-3" />
+            Réinitialiser
+          </button>
+        )}
+      </div>
+
       {/* Add form */}
       {showAdd && (
         <div className="px-6 py-4 border-b border-border bg-card">
-          <div className="flex gap-3 items-start max-w-2xl">
+          <div className="flex gap-3 items-start max-w-3xl">
             <div className="flex-1 space-y-2">
               <Input
                 value={newTitle}
@@ -254,6 +381,40 @@ export default function Ideas() {
                 placeholder="Description (optionnel)…"
                 className="bg-background resize-none h-16 text-sm"
               />
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Priorité :</span>
+                  {(["haute", "moyenne", "basse"] as const).map(p => (
+                    <button
+                      key={p}
+                      onClick={() => setNewPriority(p)}
+                      className={cn(
+                        "text-[10px] font-semibold px-2 py-0.5 rounded-full border transition-all",
+                        newPriority === p ? "opacity-100" : "opacity-40 hover:opacity-70"
+                      )}
+                      style={{
+                        color: PRIORITY_COLORS[p],
+                        borderColor: `${PRIORITY_COLORS[p]}60`,
+                        background: newPriority === p ? `${PRIORITY_COLORS[p]}20` : "transparent",
+                      }}
+                    >
+                      {PRIORITY_LABELS[p]}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Catégorie :</span>
+                  <select
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    className="text-xs bg-background border border-border rounded px-2 py-0.5"
+                  >
+                    {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
+                      <option key={k} value={k}>{v}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
             <div className="flex flex-col gap-2">
               <div className="flex gap-1">
@@ -275,6 +436,8 @@ export default function Ideas() {
                     title: newTitle.trim(),
                     description: newDesc.trim() || undefined,
                     color: newColor,
+                    priority: newPriority,
+                    category: newCategory,
                     positionX: Math.floor(Math.random() * 600),
                     positionY: Math.floor(Math.random() * 400),
                   })}
@@ -340,8 +503,16 @@ export default function Ideas() {
             </div>
             <div className="text-center">
               <p className="font-semibold mb-1">Aucune idée enregistrée</p>
-              <p className="text-sm text-muted-foreground">Cliquez sur "Nouvelle idée" pour commencer votre mind-map</p>
+              <p className="text-sm text-muted-foreground">Cliquez sur "Idées v1.3" pour charger les fonctionnalités Ma Commune</p>
             </div>
+          </div>
+        ) : filteredIdeas.length === 0 ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+            <Filter className="w-8 h-8 text-muted-foreground/40" />
+            <p className="text-sm text-muted-foreground">Aucune idée ne correspond aux filtres actifs</p>
+            <Button variant="outline" size="sm" onClick={() => { setFilterPriority(null); setFilterCategory(null); }}>
+              Réinitialiser les filtres
+            </Button>
           </div>
         ) : (
           <ReactFlow
@@ -358,9 +529,30 @@ export default function Ideas() {
             <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="rgba(148,163,184,0.08)" />
             <Controls />
             <Panel position="top-left">
-              <div className="bg-card border border-border rounded-lg px-3 py-2 flex items-center gap-3">
+              <div className="bg-card border border-border rounded-lg px-3 py-2 flex items-center gap-3 flex-wrap">
+                {/* Priority summary */}
+                {highCount > 0 && (
+                  <div className="flex items-center gap-1">
+                    <ArrowUp className="w-3 h-3 text-red-400" />
+                    <span className="text-[10px] font-bold text-red-400">{highCount}</span>
+                  </div>
+                )}
+                {medCount > 0 && (
+                  <div className="flex items-center gap-1">
+                    <Minus className="w-3 h-3 text-yellow-400" />
+                    <span className="text-[10px] font-bold text-yellow-400">{medCount}</span>
+                  </div>
+                )}
+                {lowCount > 0 && (
+                  <div className="flex items-center gap-1">
+                    <ArrowDown className="w-3 h-3 text-blue-400" />
+                    <span className="text-[10px] font-bold text-blue-400">{lowCount}</span>
+                  </div>
+                )}
+                <div className="w-px h-4 bg-border" />
+                {/* Status summary */}
                 {Object.entries(STATUS_COLORS).map(([status, color]) => {
-                  const count = ideaList.filter(i => i.status === status).length;
+                  const count = filteredIdeas.filter(i => i.status === status).length;
                   if (count === 0) return null;
                   return (
                     <div key={status} className="flex items-center gap-1.5">
@@ -377,7 +569,7 @@ export default function Ideas() {
 
         {/* Selected idea panel */}
         {selectedIdea && !showPromote && (
-          <div className="absolute right-0 top-0 h-full w-72 bg-card border-l border-border flex flex-col slide-in-right z-10">
+          <div className="absolute right-0 top-0 h-full w-80 bg-card border-l border-border flex flex-col z-10">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <span className="font-semibold text-sm truncate">{selectedIdea.title}</span>
               <button onClick={() => setSelectedIdea(null)} className="text-muted-foreground hover:text-foreground">
@@ -385,9 +577,19 @@ export default function Ideas() {
               </button>
             </div>
             <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+              {/* Badges */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <PriorityBadge priority={selectedIdea.priority ?? "moyenne"} />
+                {selectedIdea.category && (
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
+                    {CATEGORY_LABELS[selectedIdea.category] ?? selectedIdea.category}
+                  </span>
+                )}
+              </div>
               {selectedIdea.description && (
                 <p className="text-sm text-muted-foreground">{selectedIdea.description}</p>
               )}
+              {/* Status */}
               <div>
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Statut</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -400,9 +602,7 @@ export default function Ideas() {
                       }}
                       className={cn(
                         "text-[10px] font-semibold px-2 py-0.5 rounded-full border transition-opacity",
-                        selectedIdea.status === status
-                          ? "opacity-100"
-                          : "opacity-40 hover:opacity-70"
+                        selectedIdea.status === status ? "opacity-100" : "opacity-40 hover:opacity-70"
                       )}
                       style={{
                         color: STATUS_COLORS[status],
@@ -415,14 +615,36 @@ export default function Ideas() {
                   ))}
                 </div>
               </div>
+              {/* Priority */}
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Priorité</p>
+                <div className="flex gap-1.5">
+                  {(["haute", "moyenne", "basse"] as const).map(p => (
+                    <button
+                      key={p}
+                      onClick={() => {
+                        updateIdea.mutate({ id: selectedIdea.id, priority: p });
+                        setSelectedIdea({ ...selectedIdea, priority: p });
+                      }}
+                      className={cn(
+                        "text-[10px] font-semibold px-2 py-0.5 rounded-full border transition-all",
+                        selectedIdea.priority === p ? "opacity-100 scale-105" : "opacity-40 hover:opacity-70"
+                      )}
+                      style={{
+                        color: PRIORITY_COLORS[p],
+                        borderColor: `${PRIORITY_COLORS[p]}60`,
+                        background: selectedIdea.priority === p ? `${PRIORITY_COLORS[p]}20` : "transparent",
+                      }}
+                    >
+                      {PRIORITY_LABELS[p]}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
             <div className="p-4 border-t border-border space-y-2">
               {selectedIdea.status !== "promoted" && (
-                <Button
-                  className="w-full"
-                  size="sm"
-                  onClick={() => setShowPromote(true)}
-                >
+                <Button className="w-full" size="sm" onClick={() => setShowPromote(true)}>
                   <Rocket className="w-4 h-4 mr-2" />
                   Promouvoir en tâches
                 </Button>
@@ -442,7 +664,7 @@ export default function Ideas() {
 
         {/* Promote panel */}
         {showPromote && selectedIdea && (
-          <div className="absolute right-0 top-0 h-full w-80 bg-card border-l border-border flex flex-col slide-in-right z-10">
+          <div className="absolute right-0 top-0 h-full w-80 bg-card border-l border-border flex flex-col z-10">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <span className="font-semibold text-sm">Promouvoir en tâches</span>
               <button onClick={() => setShowPromote(false)} className="text-muted-foreground hover:text-foreground">
