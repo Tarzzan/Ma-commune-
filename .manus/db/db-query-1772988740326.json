@@ -1,0 +1,98 @@
+{
+  "query": "\n-- État des idées\nSELECT 'IDEAS' as table_name, id, SUBSTRING(title,1,50) as title, status, priority, category FROM ideas ORDER BY id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3U1TnSqso1nEz6n.cb54e067cf4b --database RGNGtwCyvJxe74uKiqakNB --execute \n-- État des idées\nSELECT 'IDEAS' as table_name, id, SUBSTRING(title,1,50) as title, status, priority, category FROM ideas ORDER BY id;\n",
+  "rows": [
+    {
+      "table_name": "IDEAS",
+      "id": "1",
+      "title": "Conformité RGAA 4.1 — Accessibilité niveau AA",
+      "status": "promising",
+      "priority": "haute",
+      "category": "accessibilite"
+    },
+    {
+      "table_name": "IDEAS",
+      "id": "2",
+      "title": "Système de commentaires enrichi",
+      "status": "exploring",
+      "priority": "haute",
+      "category": "engagement"
+    },
+    {
+      "table_name": "IDEAS",
+      "id": "3",
+      "title": "Tableau de bord citoyen personnalisé",
+      "status": "exploring",
+      "priority": "haute",
+      "category": "ux"
+    },
+    {
+      "table_name": "IDEAS",
+      "id": "4",
+      "title": "Carte heatmap des signalements",
+      "status": "exploring",
+      "priority": "moyenne",
+      "category": "cartographie"
+    },
+    {
+      "table_name": "IDEAS",
+      "id": "5",
+      "title": "Application mobile React Native",
+      "status": "exploring",
+      "priority": "haute",
+      "category": "mobile"
+    },
+    {
+      "table_name": "IDEAS",
+      "id": "6",
+      "title": "Gamification — Badges citoyens",
+      "status": "exploring",
+      "priority": "basse",
+      "category": "engagement"
+    },
+    {
+      "table_name": "IDEAS",
+      "id": "7",
+      "title": "Notifications multicanal (Push + Email + SMS)",
+      "status": "exploring",
+      "priority": "moyenne",
+      "category": "notifications"
+    },
+    {
+      "table_name": "IDEAS",
+      "id": "8",
+      "title": "Module statistiques et rapports municipaux",
+      "status": "exploring",
+      "priority": "moyenne",
+      "category": "analytics"
+    },
+    {
+      "table_name": "IDEAS",
+      "id": "9",
+      "title": "Authentification TOTP (Google Authenticator)",
+      "status": "promising",
+      "priority": "moyenne",
+      "category": "securite"
+    },
+    {
+      "table_name": "IDEAS",
+      "id": "10",
+      "title": "API publique documentée (OpenAPI 3.0)",
+      "status": "exploring",
+      "priority": "basse",
+      "category": "api"
+    },
+    {
+      "table_name": "IDEAS",
+      "id": "11",
+      "title": "Mode hors-ligne (PWA + Service Worker)",
+      "status": "exploring",
+      "priority": "basse",
+      "category": "pwa"
+    }
+  ],
+  "messages": [],
+  "stdout": "table_name\tid\ttitle\tstatus\tpriority\tcategory\nIDEAS\t1\tConformité RGAA 4.1 — Accessibilité niveau AA\tpromising\thaute\taccessibilite\nIDEAS\t2\tSystème de commentaires enrichi\texploring\thaute\tengagement\nIDEAS\t3\tTableau de bord citoyen personnalisé\texploring\thaute\tux\nIDEAS\t4\tCarte heatmap des signalements\texploring\tmoyenne\tcartographie\nIDEAS\t5\tApplication mobile React Native\texploring\thaute\tmobile\nIDEAS\t6\tGamification — Badges citoyens\texploring\tbasse\tengagement\nIDEAS\t7\tNotifications multicanal (Push + Email + SMS)\texploring\tmoyenne\tnotifications\nIDEAS\t8\tModule statistiques et rapports municipaux\texploring\tmoyenne\tanalytics\nIDEAS\t9\tAuthentification TOTP (Google Authenticator)\tpromising\tmoyenne\tsecurite\nIDEAS\t10\tAPI publique documentée (OpenAPI 3.0)\texploring\tbasse\tapi\nIDEAS\t11\tMode hors-ligne (PWA + Service Worker)\texploring\tbasse\tpwa\n",
+  "stderr": "",
+  "execution_time_ms": 61
+}

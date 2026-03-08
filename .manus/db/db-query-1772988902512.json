@@ -1,0 +1,17 @@
+{
+  "query": "\nSELECT id, label, nodeCount, edgeCount, analyzedAt FROM analysis_cache ORDER BY id DESC LIMIT 3;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3U1TnSqso1nEz6n.cb54e067cf4b --database RGNGtwCyvJxe74uKiqakNB --execute \nSELECT id, label, nodeCount, edgeCount, analyzedAt FROM analysis_cache ORDER BY id DESC LIMIT 3;\n",
+  "rows": [
+    {
+      "id": "1",
+      "label": "Snapshot du 07/03/2026 à 23:06",
+      "nodeCount": "45",
+      "edgeCount": "39",
+      "analyzedAt": "2026-03-08 04:06:20"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tlabel\tnodeCount\tedgeCount\tanalyzedAt\n1\tSnapshot du 07/03/2026 à 23:06\t45\t39\t2026-03-08 04:06:20\n",
+  "stderr": "",
+  "execution_time_ms": 67
+}

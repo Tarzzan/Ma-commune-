@@ -15,6 +15,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import VelocityChart from "@/components/VelocityChart";
+import MaCommuneWidget from "@/components/MaCommuneWidget";
 
 const ACTION_TYPE_LABELS: Record<string, string> = {
   git_commit: "Commit",
@@ -203,6 +204,9 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* Widget Ma Commune */}
+      <MaCommuneWidget />
 
       {/* Content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

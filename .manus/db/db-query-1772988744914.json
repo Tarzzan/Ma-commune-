@@ -1,0 +1,40 @@
+{
+  "query": "\nSELECT 'ADR' as src, id, SUBSTRING(title,1,60) as title, status FROM architecture_decisions ORDER BY id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3U1TnSqso1nEz6n.cb54e067cf4b --database RGNGtwCyvJxe74uKiqakNB --execute \nSELECT 'ADR' as src, id, SUBSTRING(title,1,60) as title, status FROM architecture_decisions ORDER BY id;\n",
+  "rows": [
+    {
+      "src": "ADR",
+      "id": "1",
+      "title": "Migration vers PHP 8.4 (Infrastructure)",
+      "status": "accepted"
+    },
+    {
+      "src": "ADR",
+      "id": "2",
+      "title": "Architecture REST API PHP native sans framework",
+      "status": "accepted"
+    },
+    {
+      "src": "ADR",
+      "id": "3",
+      "title": "Authentification 2FA (TOTP + Email OTP)",
+      "status": "accepted"
+    },
+    {
+      "src": "ADR",
+      "id": "4",
+      "title": "Conformité RGAA 4.1 — Accessibilité niveau AA",
+      "status": "proposed"
+    },
+    {
+      "src": "ADR",
+      "id": "5",
+      "title": "Généralisation du projet (variables d'environnement)",
+      "status": "accepted"
+    }
+  ],
+  "messages": [],
+  "stdout": "src\tid\ttitle\tstatus\nADR\t1\tMigration vers PHP 8.4 (Infrastructure)\taccepted\nADR\t2\tArchitecture REST API PHP native sans framework\taccepted\nADR\t3\tAuthentification 2FA (TOTP + Email OTP)\taccepted\nADR\t4\tConformité RGAA 4.1 — Accessibilité niveau AA\tproposed\nADR\t5\tGénéralisation du projet (variables d'environnement)\taccepted\n",
+  "stderr": "",
+  "execution_time_ms": 195
+}
