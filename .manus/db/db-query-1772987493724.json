@@ -1,0 +1,65 @@
+{
+  "query": "SELECT id, SUBSTRING(title, 1, 60) as title, status FROM ideas ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3U1TnSqso1nEz6n.cb54e067cf4b --database RGNGtwCyvJxe74uKiqakNB --execute SELECT id, SUBSTRING(title, 1, 60) as title, status FROM ideas ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "title": "Conformité RGAA 4.1 — Accessibilité niveau AA",
+      "status": "promising"
+    },
+    {
+      "id": "2",
+      "title": "Système de commentaires enrichi",
+      "status": "exploring"
+    },
+    {
+      "id": "3",
+      "title": "Tableau de bord citoyen personnalisé",
+      "status": "exploring"
+    },
+    {
+      "id": "4",
+      "title": "Carte heatmap des signalements",
+      "status": "exploring"
+    },
+    {
+      "id": "5",
+      "title": "Application mobile React Native",
+      "status": "exploring"
+    },
+    {
+      "id": "6",
+      "title": "Gamification — Badges citoyens",
+      "status": "exploring"
+    },
+    {
+      "id": "7",
+      "title": "Notifications multicanal (Push + Email + SMS)",
+      "status": "exploring"
+    },
+    {
+      "id": "8",
+      "title": "Module statistiques et rapports municipaux",
+      "status": "exploring"
+    },
+    {
+      "id": "9",
+      "title": "Authentification TOTP (Google Authenticator)",
+      "status": "promising"
+    },
+    {
+      "id": "10",
+      "title": "API publique documentée (OpenAPI 3.0)",
+      "status": "exploring"
+    },
+    {
+      "id": "11",
+      "title": "Mode hors-ligne (PWA + Service Worker)",
+      "status": "exploring"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tstatus\n1\tConformité RGAA 4.1 — Accessibilité niveau AA\tpromising\n2\tSystème de commentaires enrichi\texploring\n3\tTableau de bord citoyen personnalisé\texploring\n4\tCarte heatmap des signalements\texploring\n5\tApplication mobile React Native\texploring\n6\tGamification — Badges citoyens\texploring\n7\tNotifications multicanal (Push + Email + SMS)\texploring\n8\tModule statistiques et rapports municipaux\texploring\n9\tAuthentification TOTP (Google Authenticator)\tpromising\n10\tAPI publique documentée (OpenAPI 3.0)\texploring\n11\tMode hors-ligne (PWA + Service Worker)\texploring\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}
