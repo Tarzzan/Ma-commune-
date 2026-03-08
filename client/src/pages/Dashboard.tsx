@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import VelocityChart from "@/components/VelocityChart";
 
 const ACTION_TYPE_LABELS: Record<string, string> = {
   git_commit: "Commit",
@@ -83,6 +84,10 @@ export default function Dashboard() {
     { projectId: activeProject?.id ?? 0 },
     { enabled: !!activeProject }
   );
+  const { data: velocity = [] } = trpc.actions.velocity.useQuery(
+    { projectId: activeProject?.id ?? 0, days: 14 },
+    { enabled: !!activeProject }
+  );
 
   if (!activeProject) {
     return (
@@ -148,6 +153,33 @@ export default function Dashboard() {
           sub={`${ideaList.filter(i => i.status === "promoted").length} promues en tâches`}
           color="bg-orange-400/10 text-orange-400"
         />
+      </div>
+
+      {/* Graphique de vélocité Git */}
+      <div className="bg-card border border-border rounded-xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-indigo-400" />
+            <h2 className="font-semibold text-sm">Vélocité Git — 14 derniers jours</h2>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground">
+              {velocity.reduce((s, d) => s + d.count, 0)} commit{velocity.reduce((s, d) => s + d.count, 0) !== 1 ? "s" : ""} au total
+            </span>
+            <span className="text-xs font-semibold text-indigo-400">
+              {velocity.filter(d => d.count > 0).length} jour{velocity.filter(d => d.count > 0).length !== 1 ? "s" : ""} actif{velocity.filter(d => d.count > 0).length !== 1 ? "s" : ""}
+            </span>
+          </div>
+        </div>
+        <div className="px-5 py-4">
+          {velocity.length === 0 ? (
+            <div className="h-44 flex items-center justify-center text-sm text-muted-foreground">
+              Aucun commit enregistré sur cette période.
+            </div>
+          ) : (
+            <VelocityChart data={velocity} />
+          )}
+        </div>
       </div>
 
       {/* Content grid */}

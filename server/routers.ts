@@ -13,7 +13,7 @@ import {
   ideaTasks,
   users,
 } from "../drizzle/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, gte, sql } from "drizzle-orm";
 import { analyzeProjectCode } from "./analysis";
 import { invokeLLM } from "./_core/llm";
 import { startWatcher, stopWatcher, getActiveWatchers } from "./gitWatcher";
@@ -191,6 +191,47 @@ export const appRouter = router({
           commits: all.filter(a => a.actionType === "git_commit").length,
           analyses: all.filter(a => a.actionType === "analysis").length,
         };
+      }),
+
+    // ── Vélocité Git : commits par jour sur les 14 derniers jours ──
+    velocity: protectedProcedure
+      .input(z.object({ projectId: z.number(), days: z.number().default(14) }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        const since = new Date();
+        since.setDate(since.getDate() - input.days + 1);
+        since.setHours(0, 0, 0, 0);
+
+        // Récupérer tous les commits dans la fenêtre temporelle
+        const rows = await db
+          .select({ createdAt: actionsLog.createdAt })
+          .from(actionsLog)
+          .where(
+            and(
+              eq(actionsLog.projectId, input.projectId),
+              eq(actionsLog.actionType, "git_commit"),
+              gte(actionsLog.createdAt, since)
+            )
+          );
+
+        // Construire un tableau de 14 jours avec count = 0 par défaut
+        const result: { date: string; count: number }[] = [];
+        for (let i = input.days - 1; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          const key = d.toISOString().slice(0, 10); // YYYY-MM-DD
+          result.push({ date: key, count: 0 });
+        }
+
+        // Compter les commits par jour
+        for (const row of rows) {
+          const key = new Date(row.createdAt).toISOString().slice(0, 10);
+          const entry = result.find(r => r.date === key);
+          if (entry) entry.count++;
+        }
+
+        return result;
       }),
   }),
 
