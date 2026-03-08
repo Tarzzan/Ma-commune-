@@ -1,6 +1,10 @@
 /**
  * MaCommuneWidget — Métriques Ma Commune en direct
  * Affiche les KPIs de l'application citoyenne dans le tableau de bord PIPL
+ *
+ * API endpoints:
+ *   GET /mc-api/public/stats     → { total_incidents, resolved, in_progress, submitted, total_votes, total_citizens, resolution_rate, top_categories }
+ *   GET /mc-api/public/incidents → { data: [...], pagination: { total, ... } }
  */
 
 import { useEffect, useState, useCallback } from "react";
@@ -14,8 +18,20 @@ import {
   RefreshCw,
   Users,
 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { fr } from "date-fns/locale";
+// Formatage relatif natif (pas de dépendance date-fns)
+function timeAgo(dateStr: string): string {
+  try {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    if (isNaN(diff)) return "—";
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "à l'instant";
+    if (mins < 60) return `il y a ${mins} min`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `il y a ${hours}h`;
+    const days = Math.floor(hours / 24);
+    return `il y a ${days}j`;
+  } catch { return "—"; }
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,6 +40,8 @@ interface IncidentStats {
   pending: number;
   in_progress: number;
   resolved: number;
+  total_citizens: number;
+  resolution_rate: number | null;
   recent: Array<{
     id: number;
     title: string | null;
@@ -47,6 +65,7 @@ const MC_API = "https://netetfix.com/mc-api";
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "En attente",
+  submitted: "Soumis",
   in_progress: "En cours",
   resolved: "Résolu",
   rejected: "Rejeté",
@@ -54,6 +73,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "text-yellow-500 bg-yellow-400/10",
+  submitted: "text-orange-400 bg-orange-400/10",
   in_progress: "text-blue-400 bg-blue-400/10",
   resolved: "text-green-400 bg-green-400/10",
   rejected: "text-red-400 bg-red-400/10",
@@ -72,21 +92,29 @@ export default function MaCommuneWidget() {
   const fetchData = useCallback(async () => {
     setData((prev) => ({ ...prev, loading: true, error: null }));
     try {
-      const res = await fetch(`${MC_API}/incidents?limit=5&sort=recent`, {
-        headers: { Accept: "application/json" },
-      });
+      // Appels parallèles : stats globales + incidents récents
+      const [statsRes, incidentsRes] = await Promise.all([
+        fetch(`${MC_API}/public/stats`, { headers: { Accept: "application/json" } }),
+        fetch(`${MC_API}/public/incidents?limit=5`, { headers: { Accept: "application/json" } }),
+      ]);
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
+      if (!statsRes.ok) throw new Error(`Stats API HTTP ${statsRes.status}`);
+      if (!incidentsRes.ok) throw new Error(`Incidents API HTTP ${incidentsRes.status}`);
 
-      // Calculer les stats depuis la liste
-      const list: any[] = json.data ?? [];
+      const statsJson = await statsRes.json();
+      const incidentsJson = await incidentsRes.json();
+
+      const statsData = statsJson.data ?? {};
+      const incidentsList: any[] = incidentsJson.data?.data ?? [];
+
       const stats: IncidentStats = {
-        total: json.total ?? list.length,
-        pending: list.filter((i) => i.status === "pending").length,
-        in_progress: list.filter((i) => i.status === "in_progress").length,
-        resolved: list.filter((i) => i.status === "resolved").length,
-        recent: list.slice(0, 5).map((i) => ({
+        total: statsData.total_incidents ?? 0,
+        pending: statsData.submitted ?? 0,
+        in_progress: statsData.in_progress ?? 0,
+        resolved: statsData.resolved ?? 0,
+        total_citizens: statsData.total_citizens ?? 0,
+        resolution_rate: statsData.resolution_rate ?? null,
+        recent: incidentsList.slice(0, 5).map((i: any) => ({
           id: i.id,
           title: i.title ?? i.description?.slice(0, 60) ?? "Signalement",
           status: i.status,
@@ -122,19 +150,19 @@ export default function MaCommuneWidget() {
             <MapPin className="w-3.5 h-3.5 text-emerald-400" />
           </div>
           <h2 className="font-semibold text-sm">Ma Commune — Métriques live</h2>
-          {data.lastFetch && (
+            {data.lastFetch && (
             <span className="text-[10px] text-muted-foreground ml-1">
-              · Mis à jour {formatDistanceToNow(data.lastFetch, { locale: fr, addSuffix: true })}
+              · Mis à jour {timeAgo(data.lastFetch.toISOString())}
             </span>
           )}
         </div>
         <div className="flex items-center gap-2">
           <a
-            href="https://netetfix.com"
+            href="https://netetfix.com/admin"
             target="_blank"
             rel="noopener noreferrer"
             className="text-muted-foreground hover:text-foreground transition-colors"
-            title="Ouvrir Ma Commune"
+            title="Ouvrir Ma Commune Admin"
           >
             <ExternalLink className="w-3.5 h-3.5" />
           </a>
@@ -184,7 +212,7 @@ export default function MaCommuneWidget() {
               <div className="text-center">
                 <p className="text-xl font-bold text-yellow-400">{data.incidents.pending}</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center justify-center gap-1">
-                  <Clock className="w-2.5 h-2.5" /> En attente
+                  <Clock className="w-2.5 h-2.5" /> Soumis
                 </p>
               </div>
               <div className="text-center">
@@ -200,6 +228,19 @@ export default function MaCommuneWidget() {
                 </p>
               </div>
             </div>
+
+            {/* Citoyens actifs */}
+            {data.incidents.total_citizens > 0 && (
+              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                <Users className="w-3 h-3 text-emerald-400" />
+                <span>{data.incidents.total_citizens} citoyen{data.incidents.total_citizens > 1 ? "s" : ""} actif{data.incidents.total_citizens > 1 ? "s" : ""}</span>
+                {data.incidents.resolution_rate !== null && (
+                  <span className="ml-auto text-emerald-400 font-medium">
+                    {Math.round(Number(data.incidents.resolution_rate))}% résolus
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Barre de progression */}
             {data.incidents.total > 0 && (
@@ -224,11 +265,6 @@ export default function MaCommuneWidget() {
                     />
                   )}
                 </div>
-                <p className="text-[10px] text-muted-foreground text-right">
-                  {data.incidents.total > 0
-                    ? `${Math.round((data.incidents.resolved / data.incidents.total) * 100)}% résolus`
-                    : "Aucun signalement"}
-                </p>
               </div>
             )}
 
@@ -251,13 +287,18 @@ export default function MaCommuneWidget() {
                       {incident.title}
                     </span>
                     <span className="text-[10px] text-muted-foreground shrink-0">
-                      {formatDistanceToNow(new Date(incident.created_at), {
-                        locale: fr,
-                        addSuffix: true,
-                      })}
+                      {timeAgo(incident.created_at)}
                     </span>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Aucun incident */}
+            {data.incidents.total === 0 && (
+              <div className="text-center py-4 text-muted-foreground text-xs">
+                <CheckCircle2 className="w-6 h-6 text-emerald-400/50 mx-auto mb-2" />
+                Aucun signalement pour le moment
               </div>
             )}
           </div>

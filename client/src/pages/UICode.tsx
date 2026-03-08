@@ -3,8 +3,22 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Eye, Upload, Search, FileCode, Loader2, X, ZoomIn } from "lucide-react";
+import {
+  Eye,
+  Upload,
+  Search,
+  FileCode,
+  Loader2,
+  X,
+  ExternalLink,
+  Layout,
+  ChevronRight,
+  Code2,
+  Globe,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface UiElement {
   id: string;
@@ -22,6 +36,104 @@ interface CodeMatch {
   content: string;
   context: string[];
 }
+
+// ─── Screenshots Ma Commune ───────────────────────────────────────────────────
+
+interface ScreenshotEntry {
+  id: string;
+  label: string;
+  description: string;
+  url: string;
+  sourceFile: string;
+  githubUrl: string;
+  adminUrl: string;
+  tags: string[];
+}
+
+const MC_SCREENSHOTS: ScreenshotEntry[] = [
+  {
+    id: "dashboard",
+    label: "Tableau de bord",
+    description: "Vue d'ensemble des KPIs : signalements, statuts, graphiques d'évolution et derniers incidents.",
+    url: "https://d2xsxph8kpxj0f.cloudfront.net/92503813/RGNGtwCyvJxe74uKiqakNB/01-dashboard_8d64143d.webp",
+    sourceFile: "admin/pages/dashboard.php",
+    githubUrl: "https://github.com/Tarzzan/ccds-app-citoyenne/blob/main/admin/pages/dashboard.php",
+    adminUrl: "https://netetfix.com/admin/?page=dashboard",
+    tags: ["KPI", "Chart.js", "PHP"],
+  },
+  {
+    id: "incidents",
+    label: "Signalements",
+    description: "Liste paginée des signalements citoyens avec filtres par statut, catégorie et priorité.",
+    url: "https://d2xsxph8kpxj0f.cloudfront.net/92503813/RGNGtwCyvJxe74uKiqakNB/02-signalements_7a37f9b5.webp",
+    sourceFile: "admin/pages/incidents.php",
+    githubUrl: "https://github.com/Tarzzan/ccds-app-citoyenne/blob/main/admin/pages/incidents.php",
+    adminUrl: "https://netetfix.com/admin/?page=incidents",
+    tags: ["CRUD", "Pagination", "Filtres"],
+  },
+  {
+    id: "map",
+    label: "Carte interactive",
+    description: "Cartographie Leaflet.js des signalements géolocalisés avec clustering et popups détaillés.",
+    url: "https://d2xsxph8kpxj0f.cloudfront.net/92503813/RGNGtwCyvJxe74uKiqakNB/03-carte_26dfb16c.webp",
+    sourceFile: "admin/pages/map.php",
+    githubUrl: "https://github.com/Tarzzan/ccds-app-citoyenne/blob/main/admin/pages/map.php",
+    adminUrl: "https://netetfix.com/admin/?page=map",
+    tags: ["Leaflet.js", "Géolocalisation", "Clustering"],
+  },
+  {
+    id: "stats",
+    label: "Statistiques",
+    description: "Analyses approfondies : répartition par catégorie, temps de résolution moyen, tendances mensuelles.",
+    url: "https://d2xsxph8kpxj0f.cloudfront.net/92503813/RGNGtwCyvJxe74uKiqakNB/04-statistiques_4b73773d.webp",
+    sourceFile: "admin/pages/stats.php",
+    githubUrl: "https://github.com/Tarzzan/ccds-app-citoyenne/blob/main/admin/pages/stats.php",
+    adminUrl: "https://netetfix.com/admin/?page=stats",
+    tags: ["Chart.js", "Analytics", "Tendances"],
+  },
+  {
+    id: "realtime",
+    label: "Temps réel LIVE",
+    description: "Tableau de bord en temps réel avec WebSocket : activité récente, flux d'événements en direct.",
+    url: "https://d2xsxph8kpxj0f.cloudfront.net/92503813/RGNGtwCyvJxe74uKiqakNB/05-temps-reel_d580d01c.webp",
+    sourceFile: "admin/pages/realtime_dashboard.php",
+    githubUrl: "https://github.com/Tarzzan/ccds-app-citoyenne/blob/main/admin/pages/realtime_dashboard.php",
+    adminUrl: "https://netetfix.com/admin/?page=realtime_dashboard",
+    tags: ["WebSocket", "Live", "Temps réel"],
+  },
+  {
+    id: "predictive",
+    label: "Analyse prédictive",
+    description: "Détection de zones à risque par clustering géographique et analyse des tendances sur 6 mois.",
+    url: "https://d2xsxph8kpxj0f.cloudfront.net/92503813/RGNGtwCyvJxe74uKiqakNB/06-analyse-predictive_dabe7c20.webp",
+    sourceFile: "admin/pages/predictive_analysis.php",
+    githubUrl: "https://github.com/Tarzzan/ccds-app-citoyenne/blob/main/admin/pages/predictive_analysis.php",
+    adminUrl: "https://netetfix.com/admin/?page=predictive_analysis",
+    tags: ["ML", "Clustering", "Prédiction"],
+  },
+  {
+    id: "polls",
+    label: "Sondages",
+    description: "Gestion des sondages citoyens : création, publication, résultats en temps réel.",
+    url: "https://d2xsxph8kpxj0f.cloudfront.net/92503813/RGNGtwCyvJxe74uKiqakNB/07-sondages_6c16586a.webp",
+    sourceFile: "admin/pages/polls_admin.php",
+    githubUrl: "https://github.com/Tarzzan/ccds-app-citoyenne/blob/main/admin/pages/polls_admin.php",
+    adminUrl: "https://netetfix.com/admin/?page=polls",
+    tags: ["Sondages", "Communauté", "Votes"],
+  },
+  {
+    id: "events",
+    label: "Événements",
+    description: "Calendrier des événements municipaux avec gestion des inscriptions (RSVP) et publications.",
+    url: "https://d2xsxph8kpxj0f.cloudfront.net/92503813/RGNGtwCyvJxe74uKiqakNB/08-evenements_eecd0e53.webp",
+    sourceFile: "admin/pages/events_admin.php",
+    githubUrl: "https://github.com/Tarzzan/ccds-app-citoyenne/blob/main/admin/pages/events_admin.php",
+    adminUrl: "https://netetfix.com/admin/?page=events",
+    tags: ["Événements", "RSVP", "Calendrier"],
+  },
+];
+
+// ─── Couleurs éléments ────────────────────────────────────────────────────────
 
 const ELEMENT_COLORS: Record<string, string> = {
   button: "border-blue-400 bg-blue-400/20",
@@ -41,9 +153,18 @@ const ELEMENT_LABEL_COLORS: Record<string, string> = {
   other: "text-slate-400 bg-slate-400/10 border-slate-400/30",
 };
 
+// ─── Composant principal ──────────────────────────────────────────────────────
+
+type TabType = "gallery" | "analyze";
+
 export default function UICode() {
   const { data: projectList = [] } = trpc.projects.list.useQuery();
   const activeProject = projectList[0];
+
+  const [activeTab, setActiveTab] = useState<TabType>("gallery");
+  const [selectedScreenshot, setSelectedScreenshot] = useState<ScreenshotEntry | null>(null);
+
+  // Analyze tab state
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [elements, setElements] = useState<UiElement[]>([]);
   const [selectedElement, setSelectedElement] = useState<UiElement | null>(null);
@@ -77,25 +198,17 @@ export default function UICode() {
     }
     setIsUploading(true);
     try {
-      // Use local object URL for display, upload to S3 for LLM
-      const localUrl = URL.createObjectURL(file);
-      setImageUrl(localUrl);
-      setElements([]);
-      setCodeMatches([]);
-      setSelectedElement(null);
-
-      // Upload to S3 for LLM access
-      const arrayBuffer = await file.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      // Use base64 data URL as fallback since we can't access S3 from client
       const reader = new FileReader();
       reader.onload = () => {
         const dataUrl = reader.result as string;
         setImageUrl(dataUrl);
+        setElements([]);
+        setCodeMatches([]);
+        setSelectedElement(null);
         toast.success("Image chargée, prête pour l'analyse");
       };
       reader.readAsDataURL(file);
-    } catch (err) {
+    } catch {
       toast.error("Erreur lors du chargement");
     } finally {
       setIsUploading(false);
@@ -124,13 +237,15 @@ export default function UICode() {
     searchCode.mutate({ localPath: activeProject.localPath, searchText: searchQuery });
   };
 
-  if (!activeProject) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground text-sm">Configurez un projet d'abord.</p>
-      </div>
-    );
-  }
+  // Charger un screenshot Ma Commune dans l'onglet Analyser
+  const handleLoadScreenshot = (screenshot: ScreenshotEntry) => {
+    setImageUrl(screenshot.url);
+    setElements([]);
+    setCodeMatches([]);
+    setSelectedElement(null);
+    setActiveTab("analyze");
+    toast.success(`Screenshot "${screenshot.label}" chargé pour analyse`);
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -142,189 +257,425 @@ export default function UICode() {
             Pont UI-Code
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Analysez un screenshot et reliez chaque élément à son code source
+            Galerie des interfaces Ma Commune · Analyse IA screenshot → code source
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileUpload}
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => fileRef.current?.click()}
-            disabled={isUploading}
+        <div className="flex items-center gap-1 bg-secondary/50 rounded-lg p-1">
+          <button
+            onClick={() => setActiveTab("gallery")}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+              activeTab === "gallery"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
           >
-            {isUploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
-            Charger screenshot
-          </Button>
-          {imageUrl && (
-            <Button size="sm" onClick={handleAnalyze} disabled={analyze.isPending}>
-              {analyze.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Eye className="w-4 h-4 mr-2" />}
-              {analyze.isPending ? "Analyse IA…" : "Analyser avec IA"}
-            </Button>
-          )}
+            <Layout className="w-3.5 h-3.5" />
+            Galerie ({MC_SCREENSHOTS.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("analyze")}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+              activeTab === "analyze"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Code2 className="w-3.5 h-3.5" />
+            Analyser
+          </button>
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left: Image canvas */}
-        <div className="flex-1 overflow-auto p-6">
-          {!imageUrl ? (
-            <div
-              className="border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center gap-4 h-full min-h-[400px] cursor-pointer hover:border-primary/40 transition-colors"
-              onClick={() => fileRef.current?.click()}
-            >
-              <div className="w-16 h-16 rounded-2xl bg-pink-400/10 border border-pink-400/20 flex items-center justify-center">
-                <Upload className="w-8 h-8 text-pink-400" />
+      {/* ── ONGLET GALERIE ──────────────────────────────────────────────────── */}
+      {activeTab === "gallery" && (
+        <div className="flex flex-1 overflow-hidden">
+          {/* Grille de screenshots */}
+          <div className="flex-1 overflow-y-auto p-6">
+            {/* Bannière projet */}
+            <div className="flex items-center justify-between mb-5 px-4 py-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-lg">🏛️</div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Ma Commune — Interface Admin</p>
+                  <p className="text-xs text-muted-foreground">
+                    <a
+                      href="https://github.com/Tarzzan/ccds-app-citoyenne"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-emerald-400 transition-colors"
+                    >
+                      github.com/Tarzzan/ccds-app-citoyenne
+                    </a>
+                    {" · "}
+                    <a
+                      href="https://netetfix.com/admin"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-emerald-400 transition-colors"
+                    >
+                      netetfix.com/admin
+                    </a>
+                  </p>
+                </div>
               </div>
-              <div className="text-center">
-                <p className="font-semibold mb-1">Glissez ou cliquez pour charger un screenshot</p>
-                <p className="text-sm text-muted-foreground">PNG, JPG, WebP — Capture d'écran de votre interface</p>
-              </div>
+              <a
+                href="https://netetfix.com/admin"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
+              >
+                <Globe className="w-3.5 h-3.5" />
+                Ouvrir l'admin
+              </a>
             </div>
-          ) : (
-            <div className="relative inline-block">
-              <img
-                src={imageUrl}
-                alt="Screenshot analysé"
-                className="max-w-full rounded-xl border border-border"
-                style={{ display: "block" }}
-              />
-              {/* Overlay elements */}
-              {elements.map((el) => (
-                <button
-                  key={el.id}
-                  onClick={() => handleElementClick(el)}
+
+            <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
+              {MC_SCREENSHOTS.map((sc) => (
+                <div
+                  key={sc.id}
                   className={cn(
-                    "absolute border-2 rounded transition-all hover:opacity-100 cursor-pointer",
-                    ELEMENT_COLORS[el.type] ?? ELEMENT_COLORS.other,
-                    selectedElement?.id === el.id ? "opacity-100 ring-2 ring-white/50" : "opacity-60"
+                    "group rounded-xl border overflow-hidden cursor-pointer transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5",
+                    selectedScreenshot?.id === sc.id
+                      ? "border-pink-400/50 ring-1 ring-pink-400/30"
+                      : "border-border"
                   )}
-                  style={{
-                    left: `${el.x}%`,
-                    top: `${el.y}%`,
-                    width: `${el.width}%`,
-                    height: `${el.height}%`,
-                  }}
-                  title={`${el.type}: ${el.label}`}
+                  onClick={() => setSelectedScreenshot(selectedScreenshot?.id === sc.id ? null : sc)}
                 >
-                  <span
-                    className={cn(
-                      "absolute -top-5 left-0 text-[9px] font-semibold px-1.5 py-0.5 rounded border whitespace-nowrap",
-                      ELEMENT_LABEL_COLORS[el.type] ?? ELEMENT_LABEL_COLORS.other
-                    )}
-                  >
-                    {el.label.slice(0, 20)}
-                  </span>
-                </button>
+                  {/* Thumbnail */}
+                  <div className="relative aspect-video bg-secondary/30 overflow-hidden">
+                    <img
+                      src={sc.url}
+                      alt={sc.label}
+                      className="w-full h-full object-cover object-top transition-transform group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    {/* Overlay actions */}
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleLoadScreenshot(sc); }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-pink-500 hover:bg-pink-400 text-white text-xs font-medium rounded-lg transition-colors"
+                      >
+                        <Code2 className="w-3 h-3" />
+                        Analyser
+                      </button>
+                      <a
+                        href={sc.adminUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-medium rounded-lg transition-colors"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        Live
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Info */}
+                  <div className="p-3 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-foreground">{sc.label}</p>
+                      <ChevronRight className={cn(
+                        "w-3.5 h-3.5 text-muted-foreground transition-transform",
+                        selectedScreenshot?.id === sc.id ? "rotate-90 text-pink-400" : ""
+                      )} />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
+                      {sc.description}
+                    </p>
+                    <div className="flex flex-wrap gap-1 pt-0.5">
+                      {sc.tags.map((tag) => (
+                        <span key={tag} className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               ))}
+            </div>
+          </div>
+
+          {/* Panneau détail */}
+          {selectedScreenshot && (
+            <div className="w-80 border-l border-border flex flex-col shrink-0 overflow-y-auto">
+              <div className="p-4 border-b border-border flex items-center justify-between">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Détails
+                </p>
+                <button
+                  onClick={() => setSelectedScreenshot(null)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="p-4 space-y-4">
+                {/* Preview */}
+                <img
+                  src={selectedScreenshot.url}
+                  alt={selectedScreenshot.label}
+                  className="w-full rounded-lg border border-border"
+                />
+
+                {/* Titre */}
+                <div>
+                  <h3 className="font-semibold text-sm">{selectedScreenshot.label}</h3>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    {selectedScreenshot.description}
+                  </p>
+                </div>
+
+                {/* Tags */}
+                <div className="flex flex-wrap gap-1">
+                  {selectedScreenshot.tags.map((tag) => (
+                    <span key={tag} className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-muted-foreground border border-border">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Liens */}
+                <div className="space-y-2">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                    Liens
+                  </p>
+                  <a
+                    href={selectedScreenshot.githubUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/40 hover:bg-secondary/70 transition-colors text-xs"
+                  >
+                    <FileCode className="w-3.5 h-3.5 text-violet-400 shrink-0" />
+                    <span className="truncate font-mono text-violet-400">{selectedScreenshot.sourceFile}</span>
+                    <ExternalLink className="w-3 h-3 text-muted-foreground shrink-0 ml-auto" />
+                  </a>
+                  <a
+                    href={selectedScreenshot.adminUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/40 hover:bg-secondary/70 transition-colors text-xs"
+                  >
+                    <Globe className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span className="truncate text-emerald-400">Ouvrir dans l'admin</span>
+                    <ExternalLink className="w-3 h-3 text-muted-foreground shrink-0 ml-auto" />
+                  </a>
+                </div>
+
+                {/* Action analyser */}
+                <Button
+                  className="w-full"
+                  size="sm"
+                  onClick={() => handleLoadScreenshot(selectedScreenshot)}
+                >
+                  <Code2 className="w-3.5 h-3.5 mr-2" />
+                  Analyser avec IA
+                </Button>
+              </div>
             </div>
           )}
         </div>
+      )}
 
-        {/* Right: Code panel */}
-        <div className="w-96 border-l border-border flex flex-col shrink-0">
-          {/* Search */}
-          <div className="p-4 border-b border-border space-y-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Recherche dans le code
+      {/* ── ONGLET ANALYSER ─────────────────────────────────────────────────── */}
+      {activeTab === "analyze" && (
+        <div className="flex flex-col flex-1 overflow-hidden">
+          {/* Sub-header */}
+          <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-secondary/20 shrink-0">
+            <p className="text-xs text-muted-foreground">
+              {imageUrl
+                ? "Screenshot chargé — cliquez sur Analyser pour détecter les éléments UI"
+                : "Chargez un screenshot ou sélectionnez-en un depuis la Galerie"}
             </p>
-            <div className="flex gap-2">
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Texte à rechercher…"
-                className="bg-background text-sm h-8"
-                onKeyDown={(e) => e.key === "Enter" && handleManualSearch()}
+            <div className="flex items-center gap-2">
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileUpload}
               />
-              <Button size="sm" variant="outline" onClick={handleManualSearch} disabled={searchCode.isPending}>
-                {searchCode.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileRef.current?.click()}
+                disabled={isUploading}
+              >
+                {isUploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+                Charger screenshot
               </Button>
+              {imageUrl && (
+                <Button size="sm" onClick={handleAnalyze} disabled={analyze.isPending}>
+                  {analyze.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Eye className="w-4 h-4 mr-2" />}
+                  {analyze.isPending ? "Analyse IA…" : "Analyser avec IA"}
+                </Button>
+              )}
             </div>
-            {selectedElement && (
-              <div className="flex items-center gap-2 bg-secondary/50 rounded-lg px-3 py-2">
-                <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded border", ELEMENT_LABEL_COLORS[selectedElement.type] ?? ELEMENT_LABEL_COLORS.other)}>
-                  {selectedElement.type}
-                </span>
-                <span className="text-xs truncate">{selectedElement.label}</span>
-                <button onClick={() => setSelectedElement(null)} className="ml-auto text-muted-foreground hover:text-foreground">
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            )}
           </div>
 
-          {/* Results */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {elements.length > 0 && !selectedElement && (
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                  Éléments détectés ({elements.length})
-                </p>
-                <div className="space-y-1.5">
+          <div className="flex flex-1 overflow-hidden">
+            {/* Left: Image canvas */}
+            <div className="flex-1 overflow-auto p-6">
+              {!imageUrl ? (
+                <div
+                  className="border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center gap-4 h-full min-h-[400px] cursor-pointer hover:border-primary/40 transition-colors"
+                  onClick={() => fileRef.current?.click()}
+                >
+                  <div className="w-16 h-16 rounded-2xl bg-pink-400/10 border border-pink-400/20 flex items-center justify-center">
+                    <Upload className="w-8 h-8 text-pink-400" />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-semibold mb-1">Glissez ou cliquez pour charger un screenshot</p>
+                    <p className="text-sm text-muted-foreground">PNG, JPG, WebP — ou sélectionnez depuis la Galerie</p>
+                  </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setActiveTab("gallery"); }}
+                    className="text-xs text-pink-400 hover:text-pink-300 transition-colors flex items-center gap-1"
+                  >
+                    <Layout className="w-3 h-3" />
+                    Voir la galerie Ma Commune
+                  </button>
+                </div>
+              ) : (
+                <div className="relative inline-block">
+                  <img
+                    src={imageUrl}
+                    alt="Screenshot analysé"
+                    className="max-w-full rounded-xl border border-border"
+                    style={{ display: "block" }}
+                  />
                   {elements.map((el) => (
                     <button
                       key={el.id}
                       onClick={() => handleElementClick(el)}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/30 hover:bg-secondary/60 transition-colors text-left"
+                      className={cn(
+                        "absolute border-2 rounded transition-all hover:opacity-100 cursor-pointer",
+                        ELEMENT_COLORS[el.type] ?? ELEMENT_COLORS.other,
+                        selectedElement?.id === el.id ? "opacity-100 ring-2 ring-white/50" : "opacity-60"
+                      )}
+                      style={{
+                        left: `${el.x}%`,
+                        top: `${el.y}%`,
+                        width: `${el.width}%`,
+                        height: `${el.height}%`,
+                      }}
+                      title={`${el.type}: ${el.label}`}
                     >
-                      <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded border shrink-0", ELEMENT_LABEL_COLORS[el.type] ?? ELEMENT_LABEL_COLORS.other)}>
-                        {el.type}
+                      <span
+                        className={cn(
+                          "absolute -top-5 left-0 text-[9px] font-semibold px-1.5 py-0.5 rounded border whitespace-nowrap",
+                          ELEMENT_LABEL_COLORS[el.type] ?? ELEMENT_LABEL_COLORS.other
+                        )}
+                      >
+                        {el.label.slice(0, 20)}
                       </span>
-                      <span className="text-xs truncate">{el.label}</span>
                     </button>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            {codeMatches.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                  Occurrences dans le code ({codeMatches.length})
+            {/* Right: Code panel */}
+            <div className="w-96 border-l border-border flex flex-col shrink-0">
+              <div className="p-4 border-b border-border space-y-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Recherche dans le code
                 </p>
-                <div className="space-y-2">
-                  {codeMatches.map((match, i) => (
-                    <div key={i} className="bg-secondary/30 rounded-lg p-3 space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <FileCode className="w-3 h-3 text-muted-foreground shrink-0" />
-                        <span className="text-xs font-mono text-primary truncate">{match.file}</span>
-                        <span className="text-xs text-muted-foreground shrink-0">:{match.line}</span>
-                      </div>
-                      <div className="bg-background rounded p-2 overflow-x-auto">
-                        <pre className="text-[10px] font-mono text-foreground whitespace-pre-wrap">
-                          {match.context.map((line, j) => (
-                            <span
-                              key={j}
-                              className={cn(
-                                "block",
-                                j === 2 ? "text-yellow-300 bg-yellow-400/10 -mx-2 px-2" : "text-muted-foreground"
-                              )}
-                            >
-                              {line}
-                            </span>
-                          ))}
-                        </pre>
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex gap-2">
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Texte à rechercher…"
+                    className="bg-background text-sm h-8"
+                    onKeyDown={(e) => e.key === "Enter" && handleManualSearch()}
+                  />
+                  <Button size="sm" variant="outline" onClick={handleManualSearch} disabled={searchCode.isPending}>
+                    {searchCode.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+                  </Button>
                 </div>
+                {selectedElement && (
+                  <div className="flex items-center gap-2 bg-secondary/50 rounded-lg px-3 py-2">
+                    <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded border", ELEMENT_LABEL_COLORS[selectedElement.type] ?? ELEMENT_LABEL_COLORS.other)}>
+                      {selectedElement.type}
+                    </span>
+                    <span className="text-xs truncate">{selectedElement.label}</span>
+                    <button onClick={() => setSelectedElement(null)} className="ml-auto text-muted-foreground hover:text-foreground">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
 
-            {!imageUrl && (
-              <div className="text-center text-muted-foreground text-xs pt-8">
-                Chargez un screenshot pour commencer
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {elements.length > 0 && !selectedElement && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                      Éléments détectés ({elements.length})
+                    </p>
+                    <div className="space-y-1.5">
+                      {elements.map((el) => (
+                        <button
+                          key={el.id}
+                          onClick={() => handleElementClick(el)}
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/30 hover:bg-secondary/60 transition-colors text-left"
+                        >
+                          <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded border shrink-0", ELEMENT_LABEL_COLORS[el.type] ?? ELEMENT_LABEL_COLORS.other)}>
+                            {el.type}
+                          </span>
+                          <span className="text-xs truncate">{el.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {codeMatches.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                      Occurrences dans le code ({codeMatches.length})
+                    </p>
+                    <div className="space-y-2">
+                      {codeMatches.map((match, i) => (
+                        <div key={i} className="bg-secondary/30 rounded-lg p-3 space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <FileCode className="w-3 h-3 text-muted-foreground shrink-0" />
+                            <span className="text-xs font-mono text-primary truncate">{match.file}</span>
+                            <span className="text-xs text-muted-foreground shrink-0">:{match.line}</span>
+                          </div>
+                          <div className="bg-background rounded p-2 overflow-x-auto">
+                            <pre className="text-[10px] font-mono text-foreground whitespace-pre-wrap">
+                              {match.context.map((line, j) => (
+                                <span
+                                  key={j}
+                                  className={cn(
+                                    "block",
+                                    j === 2 ? "text-yellow-300 bg-yellow-400/10 -mx-2 px-2" : "text-muted-foreground"
+                                  )}
+                                >
+                                  {line}
+                                </span>
+                              ))}
+                            </pre>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {!imageUrl && (
+                  <div className="text-center text-muted-foreground text-xs pt-8">
+                    Chargez un screenshot pour commencer
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
