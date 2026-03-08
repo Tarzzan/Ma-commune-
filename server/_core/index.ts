@@ -9,7 +9,8 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { addSseClient, startWatcher, stopAllWatchers } from "../gitWatcher";
 import { getDb } from "../db";
-import { projects } from "../../drizzle/schema";
+import { projects, users } from "../../drizzle/schema";
+import { eq } from "drizzle-orm";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -58,6 +59,18 @@ async function startServer() {
     }, 25000);
     const cleanup = addSseClient(projectId, res);
     req.on("close", () => { clearInterval(ping); cleanup(); });
+  });
+
+  // ── Endpoint public : vérifier si un admin existe (sans session) ──
+  app.get("/api/has-admin", async (_req, res) => {
+    try {
+      const db = await getDb();
+      if (!db) { res.json({ hasAdmin: false }); return; }
+      const rows = await db.select().from(users).where(eq(users.role, "admin")).limit(1);
+      res.json({ hasAdmin: rows.length > 0 });
+    } catch {
+      res.json({ hasAdmin: false });
+    }
   });
 
   // tRPC API

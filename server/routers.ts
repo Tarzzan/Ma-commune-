@@ -11,11 +11,14 @@ import {
   analysisCache,
   ideas,
   ideaTasks,
+  users,
 } from "../drizzle/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { analyzeProjectCode } from "./analysis";
 import { invokeLLM } from "./_core/llm";
 import { startWatcher, stopWatcher, getActiveWatchers } from "./gitWatcher";
+import { sdk } from "./_core/sdk";
+import bcrypt from "bcryptjs";
 
 export const appRouter = router({
   system: systemRouter,
@@ -26,6 +29,67 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+
+    // ── Auth locale VPS (login/mdp sans OAuth Manus) ──
+    localLogin: publicProcedure
+      .input(z.object({
+        email: z.string().email(),
+        password: z.string().min(6),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        const rows = await db.select().from(users).where(eq(users.email, input.email)).limit(1);
+        const user = rows[0];
+        if (!user || !user.passwordHash) throw new Error("Identifiants invalides");
+        const valid = await bcrypt.compare(input.password, user.passwordHash);
+        if (!valid) throw new Error("Identifiants invalides");
+        // Créer session JWT
+        const token = await sdk.createSessionToken(user.openId, { name: user.name ?? "" });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, token, cookieOptions);
+        return { success: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } };
+      }),
+
+    // ── Vérifier si un admin existe déjà ──
+    hasAdmin: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return false;
+      const rows = await db.select().from(users).where(eq(users.role, "admin")).limit(1);
+      return rows.length > 0;
+    }),
+
+    // ── Créer le premier compte admin (premier lancement uniquement) ──
+    setupAdmin: publicProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        email: z.string().email(),
+        password: z.string().min(8),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        // Vérifier qu'aucun admin n'existe
+        const existing = await db.select().from(users).where(eq(users.role, "admin")).limit(1);
+        if (existing.length > 0) throw new Error("Un compte admin existe déjà");
+        const hash = await bcrypt.hash(input.password, 12);
+        const openId = `local-${Date.now()}`;
+        await db.insert(users).values({
+          openId,
+          name: input.name,
+          email: input.email,
+          loginMethod: "local",
+          role: "admin",
+          passwordHash: hash,
+          lastSignedIn: new Date(),
+        });
+        const rows = await db.select().from(users).where(eq(users.email, input.email)).limit(1);
+        const user = rows[0]!;
+        const token = await sdk.createSessionToken(user.openId, { name: user.name ?? "" });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, token, cookieOptions);
+        return { success: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } };
+      }),
   }),
 
   // ── Projects ──

@@ -1,5 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
+import { useEffect, useState as useStateTimeout } from "react";
 import { cn } from "@/lib/utils";
 import {
   Activity,
@@ -74,11 +74,20 @@ function NavItem({ item, collapsed }: { item: typeof navItems[0]; collapsed: boo
 }
 
 export default function PiplLayout({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const [timedOut, setTimedOut] = useStateTimeout(false);
   const [collapsed, setCollapsed] = useState(false);
   const logout = trpc.auth.logout.useMutation({
-    onSuccess: () => { window.location.href = "/"; },
+    onSuccess: () => { window.location.href = "/login"; },
   });
+
+  // Timeout de sécurité : si l'OAuth Manus ne répond pas en 2s, on considère non-authentifié
+  useEffect(() => {
+    const t = setTimeout(() => setTimedOut(true), 2000);
+    return () => clearTimeout(t);
+  }, []);
+
+  const loading = authLoading && !timedOut;
 
   if (loading) {
     return (
@@ -92,30 +101,9 @@ export default function PiplLayout({ children }: { children: React.ReactNode }) 
   }
 
   if (!isAuthenticated) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-6 max-w-sm text-center">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-            <GitBranch className="w-8 h-8 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold gradient-text mb-2">PIPL</h1>
-            <p className="text-muted-foreground text-sm">
-              Plateforme d'Intelligence de Projet Locale
-            </p>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Connectez-vous pour accéder à votre tableau de bord de gestion de projet.
-          </p>
-          <Button
-            className="w-full"
-            onClick={() => { window.location.href = getLoginUrl(); }}
-          >
-            Se connecter
-          </Button>
-        </div>
-      </div>
-    );
+    // Rediriger vers la page de connexion locale
+    window.location.href = "/login";
+    return null;
   }
 
   return (

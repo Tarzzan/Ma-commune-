@@ -5,6 +5,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import PiplLayout from "./components/PiplLayout";
+import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Config from "./pages/Config";
 import Architecture from "./pages/Architecture";
@@ -17,21 +18,29 @@ import ArchDiff from "./pages/ArchDiff";
 
 function Router() {
   return (
-    <PiplLayout>
-      <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/config" component={Config} />
-        <Route path="/architecture" component={Architecture} />
-        <Route path="/journal" component={Journal} />
-        <Route path="/adr" component={ADR} />
-        <Route path="/ui-code" component={UICode} />
-        <Route path="/ideas" component={Ideas} />
-        <Route path="/report" component={Report} />
-        <Route path="/arch-diff" component={ArchDiff} />
-        <Route path="/404" component={NotFound} />
-        <Route component={NotFound} />
-      </Switch>
-    </PiplLayout>
+    <Switch>
+      {/* Route de connexion — hors layout protégé */}
+      <Route path="/login" component={Home} />
+
+      {/* Toutes les autres routes — dans le layout protégé */}
+      <Route>
+        <PiplLayout>
+          <Switch>
+            <Route path="/" component={Dashboard} />
+            <Route path="/config" component={Config} />
+            <Route path="/architecture" component={Architecture} />
+            <Route path="/journal" component={Journal} />
+            <Route path="/adr" component={ADR} />
+            <Route path="/ui-code" component={UICode} />
+            <Route path="/ideas" component={Ideas} />
+            <Route path="/report" component={Report} />
+            <Route path="/arch-diff" component={ArchDiff} />
+            <Route path="/404" component={NotFound} />
+            <Route component={NotFound} />
+          </Switch>
+        </PiplLayout>
+      </Route>
+    </Switch>
   );
 }
 

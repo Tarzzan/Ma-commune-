@@ -78,3 +78,13 @@
 - [x] Panneau de statistiques de changements
 - [x] Entrée sidebar "Comparaison"
 - [x] Tests vitest pour la procédure diff
+
+## Authentification locale VPS (v1.3)
+- [ ] Installer bcrypt pour le hashage des mots de passe
+- [ ] Ajouter champ password (hash) sur la table users
+- [ ] Créer procédure auth.localLogin (email + password + bcrypt + JWT)
+- [ ] Créer procédure auth.setupAdmin (premier lancement — compte admin)
+- [ ] Mettre à jour Home.tsx avec formulaire de connexion local
+- [ ] Supprimer le bouton OAuth Manus sur le VPS
+- [ ] Créer compte admin par défaut au démarrage si aucun utilisateur
+- [ ] Rebuilder et redéployer sur le VPS
