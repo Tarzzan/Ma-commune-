@@ -13,6 +13,7 @@ import ADR from "./pages/ADR";
 import UICode from "./pages/UICode";
 import Ideas from "./pages/Ideas";
 import Report from "./pages/Report";
+import ArchDiff from "./pages/ArchDiff";
 
 function Router() {
   return (
@@ -26,6 +27,7 @@ function Router() {
         <Route path="/ui-code" component={UICode} />
         <Route path="/ideas" component={Ideas} />
         <Route path="/report" component={Report} />
+        <Route path="/arch-diff" component={ArchDiff} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

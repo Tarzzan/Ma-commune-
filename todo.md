@@ -68,3 +68,13 @@
 - [x] Liaison ADR ↔ nœuds d'architecture (champ nodeId sur ADR)
 - [x] UI pour attacher un ADR à un nœud depuis la carte
 - [x] Affichage des ADR liées dans le panneau latéral d'un nœud
+
+## Comparaison d'Architecture v1.2
+- [x] Conserver tous les snapshots d'analyse (pas seulement le dernier)
+- [x] Procédure tRPC analysis.listSnapshots
+- [x] Procédure tRPC analysis.diff (calcul ajoutés/supprimés/modifiés)
+- [x] Page ArchDiff avec sélecteur "Snapshot A" vs "Snapshot B"
+- [x] Visualisation React Flow avec nœuds colorés (vert=ajouté, rouge=supprimé, orange=modifié)
+- [x] Panneau de statistiques de changements
+- [x] Entrée sidebar "Comparaison"
+- [x] Tests vitest pour la procédure diff

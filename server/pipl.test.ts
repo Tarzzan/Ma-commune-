@@ -196,6 +196,34 @@ describe("report", () => {
   });
 });
 
+describe("analysis.snapshots", () => {
+  it("listSnapshots returns an array", async () => {
+    const ctx = makeCtx();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.analysis.listSnapshots({ projectId: 1 });
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("getSnapshot returns null when not found", async () => {
+    const ctx = makeCtx();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.analysis.getSnapshot({ id: 9999 });
+    expect(result).toBeNull();
+  });
+
+  it("deleteSnapshot resolves without throwing", async () => {
+    const ctx = makeCtx();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.analysis.deleteSnapshot({ id: 9999 })).resolves.toEqual({ success: true });
+  });
+
+  it("diff throws when snapshots not found", async () => {
+    const ctx = makeCtx();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.analysis.diff({ snapshotAId: 1, snapshotBId: 2 })).rejects.toThrow();
+  });
+});
+
 describe("adr.linkToNode", () => {
   it("linkToNode resolves without throwing", async () => {
     const ctx = makeCtx();

@@ -265,28 +265,37 @@ export const appRouter = router({
   // ── Architecture Analysis ──
   analysis: router({
     analyze: protectedProcedure
-      .input(z.object({ projectId: z.number(), localPath: z.string() }))
+      .input(z.object({
+        projectId: z.number(),
+        localPath: z.string(),
+        label: z.string().optional(), // Nom optionnel du snapshot
+      }))
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("DB unavailable");
         const result = await analyzeProjectCode(input.localPath);
-        // Cache result
-        await db.delete(analysisCache).where(eq(analysisCache.projectId, input.projectId));
+        // Conserver TOUS les snapshots (ne plus supprimer l'ancien)
+        const now = new Date();
+        const autoLabel = input.label ??
+          `Snapshot du ${now.toLocaleDateString("fr-FR")} à ${now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`;
         await db.insert(analysisCache).values({
           projectId: input.projectId,
+          label: autoLabel,
+          nodeCount: result.nodes.length,
+          edgeCount: result.edges.length,
           nodes: result.nodes as any,
           edges: result.edges as any,
         });
         // Update project lastAnalyzedAt
         await db
           .update(projects)
-          .set({ lastAnalyzedAt: new Date() })
+          .set({ lastAnalyzedAt: now })
           .where(eq(projects.id, input.projectId));
         // Log action
         await db.insert(actionsLog).values({
           projectId: input.projectId,
           actionType: "analysis",
-          title: `Analyse d'architecture effectuée`,
+          title: `Analyse : ${autoLabel}`,
           details: { nodeCount: result.nodes.length, edgeCount: result.edges.length } as any,
           result: "success",
         });
@@ -304,6 +313,100 @@ export const appRouter = router({
           .orderBy(desc(analysisCache.analyzedAt))
           .limit(1);
         return cache[0] ?? null;
+      }),
+    listSnapshots: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        // Return all snapshots without the heavy nodes/edges JSON
+        const rows = await db
+          .select({
+            id: analysisCache.id,
+            projectId: analysisCache.projectId,
+            label: analysisCache.label,
+            nodeCount: analysisCache.nodeCount,
+            edgeCount: analysisCache.edgeCount,
+            analyzedAt: analysisCache.analyzedAt,
+          })
+          .from(analysisCache)
+          .where(eq(analysisCache.projectId, input.projectId))
+          .orderBy(desc(analysisCache.analyzedAt));
+        return rows;
+      }),
+    getSnapshot: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return null;
+        const rows = await db
+          .select()
+          .from(analysisCache)
+          .where(eq(analysisCache.id, input.id))
+          .limit(1);
+        return rows[0] ?? null;
+      }),
+    deleteSnapshot: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        await db.delete(analysisCache).where(eq(analysisCache.id, input.id));
+        return { success: true };
+      }),
+    diff: protectedProcedure
+      .input(z.object({ snapshotAId: z.number(), snapshotBId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        const [rowsA, rowsB] = await Promise.all([
+          db.select().from(analysisCache).where(eq(analysisCache.id, input.snapshotAId)).limit(1),
+          db.select().from(analysisCache).where(eq(analysisCache.id, input.snapshotBId)).limit(1),
+        ]);
+        const snapA = rowsA[0];
+        const snapB = rowsB[0];
+        if (!snapA || !snapB) throw new Error("Snapshot introuvable");
+
+        const nodesA: any[] = Array.isArray(snapA.nodes) ? snapA.nodes as any[] : [];
+        const nodesB: any[] = Array.isArray(snapB.nodes) ? snapB.nodes as any[] : [];
+        const edgesA: any[] = Array.isArray(snapA.edges) ? snapA.edges as any[] : [];
+        const edgesB: any[] = Array.isArray(snapB.edges) ? snapB.edges as any[] : [];
+
+        const mapA = new Map(nodesA.map((n: any) => [n.id, n]));
+        const mapB = new Map(nodesB.map((n: any) => [n.id, n]));
+        const edgeMapA = new Map(edgesA.map((e: any) => [e.id, e]));
+        const edgeMapB = new Map(edgesB.map((e: any) => [e.id, e]));
+
+        // Node diff
+        const addedNodes = nodesB.filter((n: any) => !mapA.has(n.id));
+        const removedNodes = nodesA.filter((n: any) => !mapB.has(n.id));
+        const modifiedNodes = nodesB.filter((n: any) => {
+          const a = mapA.get(n.id);
+          return a && (a.label !== n.label || a.type !== n.type || a.file !== n.file);
+        });
+        const unchangedNodes = nodesB.filter((n: any) => {
+          const a = mapA.get(n.id);
+          return a && a.label === n.label && a.type === n.type && a.file === n.file;
+        });
+
+        // Edge diff
+        const addedEdges = edgesB.filter((e: any) => !edgeMapA.has(e.id));
+        const removedEdges = edgesA.filter((e: any) => !edgeMapB.has(e.id));
+
+        return {
+          snapshotA: { id: snapA.id, label: snapA.label, analyzedAt: snapA.analyzedAt, nodeCount: snapA.nodeCount, edgeCount: snapA.edgeCount },
+          snapshotB: { id: snapB.id, label: snapB.label, analyzedAt: snapB.analyzedAt, nodeCount: snapB.nodeCount, edgeCount: snapB.edgeCount },
+          nodes: { added: addedNodes, removed: removedNodes, modified: modifiedNodes, unchanged: unchangedNodes },
+          edges: { added: addedEdges, removed: removedEdges },
+          summary: {
+            nodesAdded: addedNodes.length,
+            nodesRemoved: removedNodes.length,
+            nodesModified: modifiedNodes.length,
+            nodesUnchanged: unchangedNodes.length,
+            edgesAdded: addedEdges.length,
+            edgesRemoved: removedEdges.length,
+          },
+        };
       }),
   }),
 

@@ -75,10 +75,13 @@ export const architectureDecisions = mysqlTable("architecture_decisions", {
 export type ArchitectureDecision = typeof architectureDecisions.$inferSelect;
 export type InsertArchitectureDecision = typeof architectureDecisions.$inferInsert;
 
-// Cache des analyses d'architecture
+// Snapshots d'analyses d'architecture (tous conservés pour comparaison)
 export const analysisCache = mysqlTable("analysis_cache", {
   id: int("id").autoincrement().primaryKey(),
   projectId: int("projectId").notNull(),
+  label: varchar("label", { length: 255 }), // Nom optionnel du snapshot
+  nodeCount: int("nodeCount").default(0).notNull(),
+  edgeCount: int("edgeCount").default(0).notNull(),
   nodes: json("nodes").notNull(),
   edges: json("edges").notNull(),
   analyzedAt: timestamp("analyzedAt").defaultNow().notNull(),
