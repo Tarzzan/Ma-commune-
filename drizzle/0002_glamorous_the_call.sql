@@ -1,0 +1,1 @@
+ALTER TABLE `architecture_decisions` ADD `linkedNodeId` varchar(255);

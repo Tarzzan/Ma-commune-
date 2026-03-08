@@ -67,6 +67,7 @@ export const architectureDecisions = mysqlTable("architecture_decisions", {
   consequences: text("consequences"),
   status: mysqlEnum("status", ["proposed", "accepted", "deprecated", "superseded"]).default("proposed").notNull(),
   relatedNodes: json("relatedNodes"), // IDs des nœuds de la carte
+  linkedNodeId: varchar("linkedNodeId", { length: 255 }), // Nœud d'architecture lié
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

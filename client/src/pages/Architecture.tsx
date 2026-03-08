@@ -24,9 +24,19 @@ import {
   X,
   FileCode,
   Server,
+  Shield,
+  Link2,
+  Link2Off,
   ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const NODE_TYPE_CONFIG: Record<string, { color: string; bg: string; border: string; icon: React.ElementType; label: string }> = {
   api: { color: "#60a5fa", bg: "rgba(96,165,250,0.1)", border: "rgba(96,165,250,0.4)", icon: Server, label: "API / Procédure" },
@@ -36,19 +46,34 @@ const NODE_TYPE_CONFIG: Record<string, { color: string; bg: string; border: stri
   router: { color: "#60a5fa", bg: "rgba(96,165,250,0.08)", border: "rgba(96,165,250,0.3)", icon: Cpu, label: "Routeur" },
 };
 
+const STATUS_COLORS: Record<string, string> = {
+  proposed: "text-blue-400",
+  accepted: "text-green-400",
+  deprecated: "text-red-400",
+  superseded: "text-slate-400",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  proposed: "Proposée",
+  accepted: "Acceptée",
+  deprecated: "Dépréciée",
+  superseded: "Remplacée",
+};
+
 function ArchNode({ data }: { data: any }) {
   const config = NODE_TYPE_CONFIG[data.type] ?? NODE_TYPE_CONFIG.api;
   const Icon = config.icon;
   return (
     <div
       className="rounded-lg border px-3 py-2 min-w-[140px] cursor-pointer transition-all hover:scale-105"
-      style={{ background: config.bg, borderColor: config.border }}
+      style={{ background: config.bg, borderColor: data.hasLinkedAdr ? config.color : config.border, boxShadow: data.hasLinkedAdr ? `0 0 8px ${config.color}55` : undefined }}
     >
       <div className="flex items-center gap-2">
         <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: config.color }} />
         <span className="text-xs font-semibold truncate" style={{ color: config.color }}>
           {data.label}
         </span>
+        {data.hasLinkedAdr && <Shield className="w-2.5 h-2.5 text-yellow-400 shrink-0" />}
       </div>
       {data.file && (
         <p className="text-[10px] text-slate-500 mt-0.5 font-mono truncate">{data.file}</p>
@@ -68,21 +93,68 @@ interface DetailNode {
   data?: Record<string, unknown>;
 }
 
-function DetailPanel({ node, onClose }: { node: DetailNode; onClose: () => void }) {
+function DetailPanel({
+  node,
+  projectId,
+  allAdrs,
+  onClose,
+}: {
+  node: DetailNode;
+  projectId: number;
+  allAdrs: any[];
+  onClose: () => void;
+}) {
   const config = NODE_TYPE_CONFIG[node.type] ?? NODE_TYPE_CONFIG.api;
   const Icon = config.icon;
+  const utils = trpc.useUtils();
+
+  const { data: linkedAdrs = [] } = trpc.adr.listByNode.useQuery({
+    projectId,
+    nodeId: node.id,
+  });
+
+  const linkToNode = trpc.adr.linkToNode.useMutation({
+    onSuccess: () => {
+      toast.success("ADR liée au nœud !");
+      utils.adr.listByNode.invalidate();
+      utils.adr.list.invalidate();
+    },
+    onError: (e) => toast.error(`Erreur : ${e.message}`),
+  });
+
+  const unlinkFromNode = trpc.adr.linkToNode.useMutation({
+    onSuccess: () => {
+      toast.success("Liaison supprimée");
+      utils.adr.listByNode.invalidate();
+    },
+  });
+
+  // ADRs not yet linked to this node
+  const linkedIds = new Set(linkedAdrs.map((a: any) => a.id));
+  const availableAdrs = allAdrs.filter((a) => !linkedIds.has(a.id));
+
+  const [selectedAdrId, setSelectedAdrId] = useState<string>("");
+
+  const handleLink = () => {
+    if (!selectedAdrId) return;
+    linkToNode.mutate({ id: parseInt(selectedAdrId), nodeId: node.id });
+    setSelectedAdrId("");
+  };
+
   return (
     <div className="absolute right-0 top-0 h-full w-80 bg-card border-l border-border z-10 flex flex-col slide-in-right">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
         <div className="flex items-center gap-2">
           <Icon className="w-4 h-4" style={{ color: config.color }} />
-          <span className="font-semibold text-sm">{node.label}</span>
+          <span className="font-semibold text-sm truncate">{node.label}</span>
         </div>
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground shrink-0">
           <X className="w-4 h-4" />
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-5">
+        {/* Type */}
         <div>
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Type</p>
           <span
@@ -92,6 +164,8 @@ function DetailPanel({ node, onClose }: { node: DetailNode; onClose: () => void 
             {config.label}
           </span>
         </div>
+
+        {/* Source file */}
         {node.file && (
           <div>
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Fichier source</p>
@@ -104,10 +178,84 @@ function DetailPanel({ node, onClose }: { node: DetailNode; onClose: () => void 
             )}
           </div>
         )}
+
+        {/* Node ID */}
         <div>
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Identifiant</p>
-          <code className="text-xs bg-secondary/50 px-2 py-1 rounded font-mono">{node.id}</code>
+          <code className="text-xs bg-secondary/50 px-2 py-1 rounded font-mono break-all">{node.id}</code>
         </div>
+
+        {/* Linked ADRs */}
+        <div>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+            <Shield className="w-3 h-3 text-yellow-400" />
+            Décisions liées ({linkedAdrs.length})
+          </p>
+          {linkedAdrs.length === 0 ? (
+            <p className="text-xs text-muted-foreground italic">Aucune décision ADR liée à ce nœud.</p>
+          ) : (
+            <div className="space-y-2">
+              {linkedAdrs.map((adr: any) => (
+                <div key={adr.id} className="bg-secondary/40 rounded-lg p-2.5 space-y-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-mono text-muted-foreground">{adr.adrId}</p>
+                      <p className="text-xs font-semibold truncate">{adr.title}</p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span className={cn("text-[10px]", STATUS_COLORS[adr.status])}>
+                        {STATUS_LABELS[adr.status]}
+                      </span>
+                      <button
+                        onClick={() => unlinkFromNode.mutate({ id: adr.id, nodeId: null })}
+                        className="text-muted-foreground hover:text-red-400 transition-colors ml-1"
+                        title="Délier"
+                      >
+                        <Link2Off className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                  {adr.decision && (
+                    <p className="text-[10px] text-muted-foreground line-clamp-2">{adr.decision}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Link an ADR */}
+        {availableAdrs.length > 0 && (
+          <div>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+              <Link2 className="w-3 h-3 text-cyan-400" />
+              Attacher une décision
+            </p>
+            <div className="flex gap-2">
+              <Select value={selectedAdrId} onValueChange={setSelectedAdrId}>
+                <SelectTrigger className="flex-1 h-8 text-xs">
+                  <SelectValue placeholder="Choisir un ADR…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableAdrs.map((adr: any) => (
+                    <SelectItem key={adr.id} value={String(adr.id)}>
+                      <span className="font-mono text-xs text-muted-foreground mr-2">{adr.adrId}</span>
+                      <span className="text-xs truncate">{adr.title}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                size="sm"
+                className="h-8 px-2"
+                onClick={handleLink}
+                disabled={!selectedAdrId || linkToNode.isPending}
+              >
+                <Link2 className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -124,6 +272,11 @@ export default function Architecture() {
     { enabled: !!activeProject }
   );
 
+  const { data: allAdrs = [] } = trpc.adr.list.useQuery(
+    { projectId: activeProject?.id ?? 0 },
+    { enabled: !!activeProject }
+  );
+
   const analyze = trpc.analysis.analyze.useMutation({
     onSuccess: () => {
       toast.success("Analyse terminée !");
@@ -136,14 +289,28 @@ export default function Architecture() {
   const rawNodes: any[] = Array.isArray(cache?.nodes) ? (cache.nodes as any[]) : [];
   const rawEdges: any[] = Array.isArray(cache?.edges) ? (cache.edges as any[]) : [];
 
+  // Build a set of nodeIds that have linked ADRs
+  const linkedNodeIds = useMemo(() => {
+    const ids = new Set<string>();
+    allAdrs.forEach((adr: any) => { if (adr.linkedNodeId) ids.add(adr.linkedNodeId); });
+    return ids;
+  }, [allAdrs]);
+
   const flowNodes: Node[] = useMemo(() =>
     rawNodes.map((n, i) => ({
       id: n.id,
       type: "archNode",
       position: n.data?.position ?? { x: (i % 5) * 220, y: Math.floor(i / 5) * 120 },
-      data: { label: n.label, type: n.type, file: n.file, line: n.line, ...n.data },
+      data: {
+        label: n.label,
+        type: n.type,
+        file: n.file,
+        line: n.line,
+        hasLinkedAdr: linkedNodeIds.has(n.id),
+        ...n.data,
+      },
     })),
-    [rawNodes]
+    [rawNodes, linkedNodeIds]
   );
 
   const flowEdges: Edge[] = useMemo(() =>
@@ -195,6 +362,11 @@ export default function Architecture() {
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
             {rawNodes.length} nœuds · {rawEdges.length} liaisons
+            {linkedNodeIds.size > 0 && (
+              <span className="ml-2 text-yellow-400">
+                · <Shield className="w-3 h-3 inline" /> {linkedNodeIds.size} nœud(s) avec ADR
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -259,8 +431,14 @@ export default function Architecture() {
               maskColor="rgba(8,12,23,0.7)"
             />
             <Panel position="top-left">
-              <div className="bg-card border border-border rounded-lg px-3 py-2 text-xs text-muted-foreground">
-                Cliquez sur un nœud pour voir les détails
+              <div className="bg-card border border-border rounded-lg px-3 py-2 text-xs text-muted-foreground space-y-1">
+                <p>Cliquez sur un nœud pour voir les détails</p>
+                {linkedNodeIds.size > 0 && (
+                  <p className="flex items-center gap-1 text-yellow-400">
+                    <Shield className="w-3 h-3" />
+                    Les nœuds lumineux ont des ADR liées
+                  </p>
+                )}
               </div>
             </Panel>
           </ReactFlow>
@@ -268,7 +446,12 @@ export default function Architecture() {
 
         {/* Detail panel */}
         {selectedNode && (
-          <DetailPanel node={selectedNode} onClose={() => setSelectedNode(null)} />
+          <DetailPanel
+            node={selectedNode}
+            projectId={activeProject.id}
+            allAdrs={allAdrs}
+            onClose={() => setSelectedNode(null)}
+          />
         )}
       </div>
     </div>

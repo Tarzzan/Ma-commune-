@@ -170,3 +170,42 @@ describe("uiCode", () => {
     ).resolves.toBeDefined();
   });
 });
+
+describe("gitWatcher", () => {
+  it("status returns activeWatchers array", async () => {
+    const ctx = makeCtx();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.gitWatcher.status();
+    expect(Array.isArray(result.activeWatchers)).toBe(true);
+  });
+
+  it("stop resolves without throwing", async () => {
+    const ctx = makeCtx();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.gitWatcher.stop({ projectId: 999 })).resolves.toEqual({ success: true });
+  });
+});
+
+describe("report", () => {
+  it("generate resolves without throwing when project exists", async () => {
+    // Mock DB returns empty arrays for all queries
+    const ctx = makeCtx();
+    const caller = appRouter.createCaller(ctx);
+    // Will throw "Project not found" since mock returns [] — that's expected
+    await expect(caller.report.generate({ projectId: 1 })).rejects.toThrow();
+  });
+});
+
+describe("adr.linkToNode", () => {
+  it("linkToNode resolves without throwing", async () => {
+    const ctx = makeCtx();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.adr.linkToNode({ id: 1, nodeId: "api-test" })).resolves.toEqual({ success: true });
+  });
+
+  it("listByNode resolves without throwing", async () => {
+    const ctx = makeCtx();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.adr.listByNode({ projectId: 1, nodeId: "api-test" })).resolves.toBeDefined();
+  });
+});

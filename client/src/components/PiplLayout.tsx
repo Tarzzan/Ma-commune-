@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Cpu,
   Eye,
+  FileText,
   FolderOpen,
   GitBranch,
   LayoutDashboard,
@@ -29,6 +30,7 @@ const navItems = [
   { path: "/adr", icon: Shield, label: "Décisions (ADR)", color: "text-yellow-400" },
   { path: "/ui-code", icon: Eye, label: "Pont UI-Code", color: "text-pink-400" },
   { path: "/ideas", icon: Brain, label: "Arbre des Idées", color: "text-orange-400" },
+  { path: "/report", icon: FileText, label: "Rapport PDF", color: "text-cyan-400" },
 ];
 
 function NavItem({ item, collapsed }: { item: typeof navItems[0]; collapsed: boolean }) {

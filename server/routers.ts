@@ -15,6 +15,7 @@ import {
 import { eq, desc, and } from "drizzle-orm";
 import { analyzeProjectCode } from "./analysis";
 import { invokeLLM } from "./_core/llm";
+import { startWatcher, stopWatcher, getActiveWatchers } from "./gitWatcher";
 
 export const appRouter = router({
   system: systemRouter,
@@ -43,12 +44,15 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("DB unavailable");
-        await db.insert(projects).values({
+        const result = await db.insert(projects).values({
           name: input.name,
           localPath: input.localPath,
           description: input.description ?? null,
         });
-        return { success: true };
+        const newId = Number((result as any).insertId);
+        // Start Git watcher for the new project
+        startWatcher(newId, input.localPath).catch(() => {});
+        return { success: true, id: newId };
       }),
     update: protectedProcedure
       .input(z.object({
@@ -180,6 +184,81 @@ export const appRouter = router({
           .set({ status: input.status })
           .where(eq(architectureDecisions.id, input.id));
         return { success: true };
+      }),
+    linkToNode: protectedProcedure
+      .input(z.object({ id: z.number(), nodeId: z.string().nullable() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        await db
+          .update(architectureDecisions)
+          .set({ linkedNodeId: input.nodeId })
+          .where(eq(architectureDecisions.id, input.id));
+        return { success: true };
+      }),
+    listByNode: protectedProcedure
+      .input(z.object({ projectId: z.number(), nodeId: z.string() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        return db
+          .select()
+          .from(architectureDecisions)
+          .where(
+            and(
+              eq(architectureDecisions.projectId, input.projectId),
+              eq(architectureDecisions.linkedNodeId, input.nodeId)
+            )
+          )
+          .orderBy(desc(architectureDecisions.createdAt));
+      }),
+  }),
+
+  // ── Git Watcher ──
+  gitWatcher: router({
+    status: protectedProcedure.query(() => ({
+      activeWatchers: getActiveWatchers(),
+    })),
+    start: protectedProcedure
+      .input(z.object({ projectId: z.number(), localPath: z.string() }))
+      .mutation(async ({ input }) => {
+        await startWatcher(input.projectId, input.localPath);
+        return { success: true };
+      }),
+    stop: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .mutation(({ input }) => {
+        stopWatcher(input.projectId);
+        return { success: true };
+      }),
+  }),
+
+  // ── Report Generator ──
+  report: router({
+    generate: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        const [projectList, actionsList, adrList, ideasList, tasksList, cacheList] = await Promise.all([
+          db.select().from(projects).where(eq(projects.id, input.projectId)),
+          db.select().from(actionsLog).where(eq(actionsLog.projectId, input.projectId)).orderBy(desc(actionsLog.createdAt)),
+          db.select().from(architectureDecisions).where(eq(architectureDecisions.projectId, input.projectId)).orderBy(desc(architectureDecisions.createdAt)),
+          db.select().from(ideas).where(eq(ideas.projectId, input.projectId)),
+          db.select().from(ideaTasks).where(eq(ideaTasks.projectId, input.projectId)),
+          db.select().from(analysisCache).where(eq(analysisCache.projectId, input.projectId)).orderBy(desc(analysisCache.analyzedAt)).limit(1),
+        ]);
+        const project = projectList[0];
+        if (!project) throw new Error("Project not found");
+        return {
+          project,
+          actions: actionsList,
+          adrs: adrList,
+          ideas: ideasList,
+          tasks: tasksList,
+          architecture: cacheList[0] ?? null,
+          generatedAt: new Date().toISOString(),
+        };
       }),
   }),
 

@@ -12,6 +12,7 @@ import Journal from "./pages/Journal";
 import ADR from "./pages/ADR";
 import UICode from "./pages/UICode";
 import Ideas from "./pages/Ideas";
+import Report from "./pages/Report";
 
 function Router() {
   return (
@@ -24,6 +25,7 @@ function Router() {
         <Route path="/adr" component={ADR} />
         <Route path="/ui-code" component={UICode} />
         <Route path="/ideas" component={Ideas} />
+        <Route path="/report" component={Report} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

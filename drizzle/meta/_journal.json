@@ -15,6 +15,13 @@
       "when": 1772939789790,
       "tag": "0001_flippant_impossible_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1772940953162,
+      "tag": "0002_glamorous_the_call",
+      "breakpoints": true
     }
   ]
 }

@@ -57,3 +57,14 @@
 ## Tests & Livraison
 - [x] Tests vitest pour les procédures principales (13 tests passés)
 - [x] Checkpoint final
+
+## Améliorations v1.1
+- [x] Surveillance Git en temps réel (Chokidar watcher + polling serveur)
+- [x] Endpoint SSE /api/git-events pour push vers le frontend
+- [x] Auto-refresh Journal quand un nouveau commit est détecté
+- [x] Export rapport PDF (architecture + ADR + journal)
+- [x] Procédure tRPC generateReport
+- [x] Page/bouton "Exporter PDF" sur le tableau de bord
+- [x] Liaison ADR ↔ nœuds d'architecture (champ nodeId sur ADR)
+- [x] UI pour attacher un ADR à un nœud depuis la carte
+- [x] Affichage des ADR liées dans le panneau latéral d'un nœud
