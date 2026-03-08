@@ -125,3 +125,13 @@ export const ideaTasks = mysqlTable("idea_tasks", {
 
 export type IdeaTask = typeof ideaTasks.$inferSelect;
 export type InsertIdeaTask = typeof ideaTasks.$inferInsert;
+
+// Paramètres globaux de PIPL (moteur IA, clés API, etc.)
+export const settings = mysqlTable("settings", {
+  id: int("id").autoincrement().primaryKey(),
+  key: varchar("key", { length: 100 }).notNull().unique(),
+  value: text("value"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Setting = typeof settings.$inferSelect;
+export type InsertSetting = typeof settings.$inferInsert;

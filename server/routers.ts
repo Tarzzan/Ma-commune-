@@ -16,6 +16,7 @@ import {
 import { eq, desc, and, gte, sql } from "drizzle-orm";
 import { analyzeProjectCode } from "./analysis";
 import { invokeLLM } from "./_core/llm";
+import { invokeLLMWithEngine, getAiEngineConfig, updateSetting, type AiEngine } from "./aiEngine";
 import { startWatcher, stopWatcher, getActiveWatchers } from "./gitWatcher";
 import { sdk } from "./_core/sdk";
 import bcrypt from "bcryptjs";
@@ -890,13 +891,25 @@ header('X-' . APP_SHORT_NAME . '-Version: ' . APP_VERSION);
       .input(z.object({
         imageUrl: z.string(),
         projectId: z.number(),
-        localPath: z.string(),
+        localPath: z.string().optional(),
         screenLabel: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
+        // Résoudre localPath depuis projectId si non fourni
+        let resolvedLocalPath = input.localPath;
+        if (!resolvedLocalPath && input.projectId) {
+          try {
+            const { getDb } = await import("./db");
+            const db = await getDb();
+            const { projects } = await import("../drizzle/schema");
+            const { eq } = await import("drizzle-orm");
+            const proj = await db!.select().from(projects).where(eq(projects.id, input.projectId)).limit(1);
+            if (proj[0]) resolvedLocalPath = proj[0].localPath;
+          } catch { /* ignorer */ }
+        }
         // Lire un extrait du code source pertinent si localPath est fourni
         let codeContext = "";
-        if (input.localPath) {
+        if (resolvedLocalPath) {
           try {
             const { searchInFiles } = await import("./analysis");
             // Chercher les fichiers PHP et React Native liés à cet écran
@@ -904,23 +917,31 @@ header('X-' . APP_SHORT_NAME . '-Version: ' . APP_VERSION);
             const keywords = label ? label.split(/[\s&]+/).filter(w => w.length > 3) : ["incident", "signalement"];
             const allMatches: string[] = [];
             for (const kw of keywords.slice(0, 3)) {
-              const matches = await searchInFiles(input.localPath, kw);
+              const matches = await searchInFiles(resolvedLocalPath, kw);
               matches.slice(0, 5).forEach(m => {
                 allMatches.push(`// ${m.file}:${m.line}\n${m.context.join("\n")}`);
               });
             }
             if (allMatches.length > 0) {
-              codeContext = `\n\nContexte du code source (${input.localPath}):\n\`\`\`\n${allMatches.slice(0, 10).join("\n---\n")}\n\`\`\``;
+              codeContext = `\n\nContexte du code source (${resolvedLocalPath}):\n\`\`\`\n${allMatches.slice(0, 10).join("\n---\n")}\n\`\`\``;
             }
           } catch {
             // Ignorer les erreurs de lecture de fichiers
           }
         }
-        const response = await invokeLLM({
+        // Liste des fichiers sources connus du projet
+        const phpFiles = ["dashboard.php","incidents.php","incident_detail.php","map.php","stats.php","realtime_dashboard.php","predictive_analysis.php","polls_admin.php","events_admin.php","users.php","categories.php","notifications.php","search.php","audit_logs.php","moderation.php","login.php"];
+        const rnFiles = ["LoginScreen.tsx","MapScreen.tsx","CreateIncidentScreen.tsx","MyIncidentsScreen.tsx","IncidentDetailScreen.tsx","DashboardScreen.tsx","NotificationsScreen.tsx","EventsScreen.tsx","ProfileScreen.tsx","App.tsx"];
+        const isWeb = !input.screenLabel?.toLowerCase().includes("mobile") && !input.screenLabel?.toLowerCase().includes("connexion") && !input.screenLabel?.toLowerCase().includes("créer") && !input.screenLabel?.toLowerCase().includes("mes signal");
+        const fileList = isWeb ? phpFiles.map(f => `admin/pages/${f}`) : rnFiles.map(f => `mobile/src/screens/${f}`);
+        const fileListStr = fileList.join(", ");
+
+        const aiConfig = await getAiEngineConfig();
+        const response = await invokeLLMWithEngine({
           messages: [
             {
               role: "system",
-              content: `Tu es un expert en analyse d'interfaces utilisateur et en développement PHP/React Native. Analyse le screenshot fourni et identifie tous les éléments interactifs visibles. Pour chaque élément, fournis ses coordonnées relatives (en pourcentage), son texte/label, son type, et si possible le nom du fichier source correspondant dans le code. Réponds UNIQUEMENT en JSON valide.${codeContext}`,
+              content: `Tu es un expert en analyse d'interfaces utilisateur et en développement PHP/React Native pour le projet Ma Commune (CCDS Guyane). Analyse le screenshot et identifie tous les éléments interactifs visibles. Pour sourceFile, choisis UNIQUEMENT parmi ces fichiers réels du projet : ${fileListStr}. Si tu n'es pas sûr, laisse sourceFile vide (""). Ne génère JAMAIS de chemins inventés. Réponds UNIQUEMENT en JSON valide.${codeContext}`,
             },
             {
               role: "user",
@@ -931,7 +952,7 @@ header('X-' . APP_SHORT_NAME . '-Version: ' . APP_VERSION);
                 },
                 {
                   type: "text",
-                  text: `Analyse cette interface${input.screenLabel ? ` (${input.screenLabel})` : ""}. Identifie tous les éléments interactifs. Retourne un JSON avec: { elements: [{ id: string, type: 'button'|'link'|'input'|'menu'|'tab'|'other', label: string, x: number, y: number, width: number, height: number, sourceFile?: string }] } où x,y,width,height sont des pourcentages (0-100). Pour sourceFile, indique le fichier PHP ou React Native le plus probable.`,
+                  text: `Analyse cette interface${input.screenLabel ? ` (${input.screenLabel})` : ""}. Identifie tous les éléments interactifs. Retourne un JSON avec: { elements: [{ id: string, type: 'button'|'link'|'input'|'menu'|'tab'|'other', label: string, x: number, y: number, width: number, height: number, sourceFile: string }] } où x,y,width,height sont des pourcentages (0-100). Pour sourceFile, utilise UNIQUEMENT les fichiers de la liste fournie dans le system prompt, ou "" si incertain.`,
                 },
               ],
             },
@@ -1135,7 +1156,52 @@ header('X-' . APP_SHORT_NAME . '-Version: ' . APP_VERSION);
         }
         return { success: true, seeded, message: `${seeded} idées v1.3 ajoutées` };
       }),
+   }),
+
+  // ── Paramètres PIPL (moteur IA, clés API) ──
+  settings: router({
+    get: protectedProcedure.query(async () => {
+      const cfg = await getAiEngineConfig();
+      return {
+        engine: cfg.engine,
+        openaiModel: cfg.openaiModel ?? "gpt-4o",
+        // Ne jamais exposer la clé complète — masquée
+        openaiKeyConfigured: !!(cfg.openaiApiKey && cfg.openaiApiKey.length > 10),
+        openaiKeyPreview: cfg.openaiApiKey
+          ? cfg.openaiApiKey.substring(0, 8) + "..." + cfg.openaiApiKey.slice(-4)
+          : "",
+      };
+    }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          engine: z.enum(["openai", "manus_forge"]).optional(),
+          openaiApiKey: z.string().optional(),
+          openaiModel: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        if (input.engine) await updateSetting("ai_engine", input.engine);
+        if (input.openaiApiKey !== undefined) await updateSetting("openai_api_key", input.openaiApiKey);
+        if (input.openaiModel) await updateSetting("openai_model", input.openaiModel);
+        return { success: true };
+      }),
+
+    test: protectedProcedure.mutation(async () => {
+      const cfg = await getAiEngineConfig();
+      try {
+        const res = await invokeLLMWithEngine({
+          messages: [{ role: "user", content: "Réponds uniquement: OK" }],
+          max_tokens: 10,
+        }, cfg);
+        const reply = res.choices[0]?.message?.content ?? "";
+        return { success: true, engine: cfg.engine, reply };
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { success: false, engine: cfg.engine, error: msg };
+      }
+    }),
   }),
 });
-
 export type AppRouter = typeof appRouter;

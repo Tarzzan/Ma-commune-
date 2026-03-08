@@ -43,6 +43,13 @@
       "when": 1772983159636,
       "tag": "0005_opposite_scream",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1772998509386,
+      "tag": "0006_stale_timeslip",
+      "breakpoints": true
     }
   ]
 }
