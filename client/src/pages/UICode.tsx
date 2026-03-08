@@ -15,6 +15,8 @@ import {
   ChevronRight,
   Code2,
   Globe,
+  Smartphone,
+  Monitor,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +50,7 @@ interface ScreenshotEntry {
   githubUrl: string;
   adminUrl: string;
   tags: string[];
+  platform?: "web" | "mobile";
 }
 
 const MC_SCREENSHOTS: ScreenshotEntry[] = [
@@ -60,6 +63,7 @@ const MC_SCREENSHOTS: ScreenshotEntry[] = [
     githubUrl: "https://github.com/Tarzzan/ccds-app-citoyenne/blob/main/admin/pages/dashboard.php",
     adminUrl: "https://netetfix.com/admin/?page=dashboard",
     tags: ["KPI", "Chart.js", "PHP"],
+    platform: "web",
   },
   {
     id: "incidents",
@@ -70,6 +74,7 @@ const MC_SCREENSHOTS: ScreenshotEntry[] = [
     githubUrl: "https://github.com/Tarzzan/ccds-app-citoyenne/blob/main/admin/pages/incidents.php",
     adminUrl: "https://netetfix.com/admin/?page=incidents",
     tags: ["CRUD", "Pagination", "Filtres"],
+    platform: "web",
   },
   {
     id: "map",
@@ -80,6 +85,7 @@ const MC_SCREENSHOTS: ScreenshotEntry[] = [
     githubUrl: "https://github.com/Tarzzan/ccds-app-citoyenne/blob/main/admin/pages/map.php",
     adminUrl: "https://netetfix.com/admin/?page=map",
     tags: ["Leaflet.js", "Géolocalisation", "Clustering"],
+    platform: "web",
   },
   {
     id: "stats",
@@ -90,6 +96,7 @@ const MC_SCREENSHOTS: ScreenshotEntry[] = [
     githubUrl: "https://github.com/Tarzzan/ccds-app-citoyenne/blob/main/admin/pages/stats.php",
     adminUrl: "https://netetfix.com/admin/?page=stats",
     tags: ["Chart.js", "Analytics", "Tendances"],
+    platform: "web",
   },
   {
     id: "realtime",
@@ -100,6 +107,7 @@ const MC_SCREENSHOTS: ScreenshotEntry[] = [
     githubUrl: "https://github.com/Tarzzan/ccds-app-citoyenne/blob/main/admin/pages/realtime_dashboard.php",
     adminUrl: "https://netetfix.com/admin/?page=realtime_dashboard",
     tags: ["WebSocket", "Live", "Temps réel"],
+    platform: "web",
   },
   {
     id: "predictive",
@@ -110,6 +118,7 @@ const MC_SCREENSHOTS: ScreenshotEntry[] = [
     githubUrl: "https://github.com/Tarzzan/ccds-app-citoyenne/blob/main/admin/pages/predictive_analysis.php",
     adminUrl: "https://netetfix.com/admin/?page=predictive_analysis",
     tags: ["ML", "Clustering", "Prédiction"],
+    platform: "web",
   },
   {
     id: "polls",
@@ -120,6 +129,7 @@ const MC_SCREENSHOTS: ScreenshotEntry[] = [
     githubUrl: "https://github.com/Tarzzan/ccds-app-citoyenne/blob/main/admin/pages/polls_admin.php",
     adminUrl: "https://netetfix.com/admin/?page=polls",
     tags: ["Sondages", "Communauté", "Votes"],
+    platform: "web",
   },
   {
     id: "events",
@@ -130,6 +140,65 @@ const MC_SCREENSHOTS: ScreenshotEntry[] = [
     githubUrl: "https://github.com/Tarzzan/ccds-app-citoyenne/blob/main/admin/pages/events_admin.php",
     adminUrl: "https://netetfix.com/admin/?page=events",
     tags: ["Événements", "RSVP", "Calendrier"],
+    platform: "web",
+  },
+];
+
+const MC_MOBILE_SCREENSHOTS: ScreenshotEntry[] = [
+  {
+    id: "mobile-login",
+    label: "Connexion & Identité",
+    description: "Écran de connexion sécurisé avec l'identité visuelle CCDS Guyane et dégradé vert forêt. Authentification JWT.",
+    url: "https://d2xsxph8kpxj0f.cloudfront.net/92503813/RGNGtwCyvJxe74uKiqakNB/mobile_01_login_78af33b4.png",
+    sourceFile: "mobile/src/screens/LoginScreen.tsx",
+    githubUrl: "https://github.com/Tarzzan/ccds-app-citoyenne/blob/main/mobile/src/screens/LoginScreen.tsx",
+    adminUrl: "https://netetfix.com/app/",
+    tags: ["React Native", "JWT", "Expo"],
+    platform: "mobile",
+  },
+  {
+    id: "mobile-carte",
+    label: "Carte Interactive",
+    description: "Visualisation des signalements sur le territoire CCDS (Kourou & Sinnamary) avec clustering et popups natifs.",
+    url: "https://d2xsxph8kpxj0f.cloudfront.net/92503813/RGNGtwCyvJxe74uKiqakNB/mobile_02_carte_ad8f77f7.png",
+    sourceFile: "mobile/src/screens/MapScreen.tsx",
+    githubUrl: "https://github.com/Tarzzan/ccds-app-citoyenne/blob/main/mobile/src/screens/MapScreen.tsx",
+    adminUrl: "https://netetfix.com/app/",
+    tags: ["React Native Maps", "Géolocalisation", "Clustering"],
+    platform: "mobile",
+  },
+  {
+    id: "mobile-creation",
+    label: "Créer un Signalement",
+    description: "Formulaire ultra-rapide avec géolocalisation automatique, sélection de catégorie et upload photo.",
+    url: "https://d2xsxph8kpxj0f.cloudfront.net/92503813/RGNGtwCyvJxe74uKiqakNB/mobile_03_creation_ea2889ef.png",
+    sourceFile: "mobile/src/screens/CreateIncidentScreen.tsx",
+    githubUrl: "https://github.com/Tarzzan/ccds-app-citoyenne/blob/main/mobile/src/screens/CreateIncidentScreen.tsx",
+    adminUrl: "https://netetfix.com/app/",
+    tags: ["Formulaire", "GPS", "Upload photo"],
+    platform: "mobile",
+  },
+  {
+    id: "mobile-mes-signalements",
+    label: "Mes Signalements",
+    description: "Suivi personnalisé de l'avancement des demandes citoyennes avec badges de statut et historique.",
+    url: "https://d2xsxph8kpxj0f.cloudfront.net/92503813/RGNGtwCyvJxe74uKiqakNB/mobile_04_mes_signalements_f75959b7.png",
+    sourceFile: "mobile/src/screens/MyIncidentsScreen.tsx",
+    githubUrl: "https://github.com/Tarzzan/ccds-app-citoyenne/blob/main/mobile/src/screens/MyIncidentsScreen.tsx",
+    adminUrl: "https://netetfix.com/app/",
+    tags: ["Liste", "Statuts", "Suivi citoyen"],
+    platform: "mobile",
+  },
+  {
+    id: "mobile-detail",
+    label: "Détail & Transparence",
+    description: "Historique complet du signalement avec dialogue citoyen-agent, photos et timeline de traitement.",
+    url: "https://d2xsxph8kpxj0f.cloudfront.net/92503813/RGNGtwCyvJxe74uKiqakNB/mobile_05_detail_b4e060f3.png",
+    sourceFile: "mobile/src/screens/IncidentDetailScreen.tsx",
+    githubUrl: "https://github.com/Tarzzan/ccds-app-citoyenne/blob/main/mobile/src/screens/IncidentDetailScreen.tsx",
+    adminUrl: "https://netetfix.com/app/",
+    tags: ["Détail", "Timeline", "Chat citoyen"],
+    platform: "mobile",
   },
 ];
 
@@ -153,9 +222,107 @@ const ELEMENT_LABEL_COLORS: Record<string, string> = {
   other: "text-slate-400 bg-slate-400/10 border-slate-400/30",
 };
 
+// ─── Composant carte screenshot ───────────────────────────────────────────────
+
+function ScreenshotCard({
+  sc,
+  selected,
+  onSelect,
+  onLoad,
+  mobileStyle = false,
+}: {
+  sc: ScreenshotEntry;
+  selected: boolean;
+  onSelect: (sc: ScreenshotEntry | null) => void;
+  onLoad: (sc: ScreenshotEntry) => void;
+  mobileStyle?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "group rounded-xl border overflow-hidden cursor-pointer transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5",
+        selected
+          ? mobileStyle
+            ? "border-violet-400/50 ring-1 ring-violet-400/30"
+            : "border-pink-400/50 ring-1 ring-pink-400/30"
+          : "border-border"
+      )}
+      onClick={() => onSelect(selected ? null : sc)}
+    >
+      {/* Thumbnail */}
+      <div className={cn(
+        "relative bg-secondary/30 overflow-hidden",
+        mobileStyle ? "aspect-[9/16] max-h-56" : "aspect-video"
+      )}>
+        <img
+          src={sc.url}
+          alt={sc.label}
+          className="w-full h-full object-cover object-top transition-transform group-hover:scale-105"
+          loading="lazy"
+        />
+        {/* Badge plateforme */}
+        <div className={cn(
+          "absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold",
+          mobileStyle
+            ? "bg-violet-500/80 text-white"
+            : "bg-emerald-500/80 text-white"
+        )}>
+          {mobileStyle ? <Smartphone className="w-2.5 h-2.5" /> : <Monitor className="w-2.5 h-2.5" />}
+          {mobileStyle ? "Mobile" : "Web"}
+        </div>
+        {/* Overlay actions */}
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+          <button
+            onClick={(e) => { e.stopPropagation(); onLoad(sc); }}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 text-white text-xs font-medium rounded-lg transition-colors",
+              mobileStyle ? "bg-violet-500 hover:bg-violet-400" : "bg-pink-500 hover:bg-pink-400"
+            )}
+          >
+            <Code2 className="w-3 h-3" />
+            Analyser
+          </button>
+          <a
+            href={sc.adminUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-medium rounded-lg transition-colors"
+          >
+            <ExternalLink className="w-3 h-3" />
+            Live
+          </a>
+        </div>
+      </div>
+
+      {/* Info */}
+      <div className="p-3 space-y-1.5">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold text-foreground">{sc.label}</p>
+          <ChevronRight className={cn(
+            "w-3.5 h-3.5 text-muted-foreground transition-transform",
+            selected ? "rotate-90 text-pink-400" : ""
+          )} />
+        </div>
+        <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
+          {sc.description}
+        </p>
+        <div className="flex flex-wrap gap-1 pt-0.5">
+          {sc.tags.map((tag) => (
+            <span key={tag} className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
+              {tag}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Composant principal ──────────────────────────────────────────────────────
 
 type TabType = "gallery" | "analyze";
+type GalleryFilter = "all" | "web" | "mobile";
 
 export default function UICode() {
   const { data: projectList = [] } = trpc.projects.list.useQuery();
@@ -163,6 +330,12 @@ export default function UICode() {
 
   const [activeTab, setActiveTab] = useState<TabType>("gallery");
   const [selectedScreenshot, setSelectedScreenshot] = useState<ScreenshotEntry | null>(null);
+  const [galleryFilter, setGalleryFilter] = useState<GalleryFilter>("all");
+
+  const allScreenshots = [...MC_SCREENSHOTS, ...MC_MOBILE_SCREENSHOTS];
+  const filteredScreenshots = galleryFilter === "all"
+    ? allScreenshots
+    : allScreenshots.filter((s) => s.platform === galleryFilter);
 
   // Analyze tab state
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -271,7 +444,7 @@ export default function UICode() {
             )}
           >
             <Layout className="w-3.5 h-3.5" />
-            Galerie ({MC_SCREENSHOTS.length})
+            Galerie ({allScreenshots.length})
           </button>
           <button
             onClick={() => setActiveTab("analyze")}
@@ -294,11 +467,11 @@ export default function UICode() {
           {/* Grille de screenshots */}
           <div className="flex-1 overflow-y-auto p-6">
             {/* Bannière projet */}
-            <div className="flex items-center justify-between mb-5 px-4 py-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
+            <div className="flex items-center justify-between mb-4 px-4 py-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-lg">🏛️</div>
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Ma Commune — Interface Admin</p>
+                  <p className="text-sm font-semibold text-foreground">Ma Commune — CCDS App Citoyenne</p>
                   <p className="text-xs text-muted-foreground">
                     <a
                       href="https://github.com/Tarzzan/ccds-app-citoyenne"
@@ -331,71 +504,89 @@ export default function UICode() {
               </a>
             </div>
 
-            <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
-              {MC_SCREENSHOTS.map((sc) => (
-                <div
-                  key={sc.id}
+            {/* Filtres plateforme */}
+            <div className="flex items-center gap-2 mb-5">
+              {(
+                [
+                  { key: "all" as const, label: `Tout (${allScreenshots.length})`, icon: null },
+                  { key: "web" as const, label: `Admin Web (${MC_SCREENSHOTS.length})`, icon: Monitor },
+                  { key: "mobile" as const, label: `Mobile React Native (${MC_MOBILE_SCREENSHOTS.length})`, icon: Smartphone },
+                ]
+              ).map(({ key, label, icon: Icon }) => (
+                <button
+                  key={key}
+                  onClick={() => setGalleryFilter(key)}
                   className={cn(
-                    "group rounded-xl border overflow-hidden cursor-pointer transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5",
-                    selectedScreenshot?.id === sc.id
-                      ? "border-pink-400/50 ring-1 ring-pink-400/30"
-                      : "border-border"
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border",
+                    galleryFilter === key
+                      ? key === "mobile"
+                        ? "bg-violet-500/15 border-violet-500/40 text-violet-300"
+                        : key === "web"
+                        ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300"
+                        : "bg-primary/15 border-primary/40 text-primary"
+                      : "border-border text-muted-foreground hover:text-foreground hover:border-border/80"
                   )}
-                  onClick={() => setSelectedScreenshot(selectedScreenshot?.id === sc.id ? null : sc)}
                 >
-                  {/* Thumbnail */}
-                  <div className="relative aspect-video bg-secondary/30 overflow-hidden">
-                    <img
-                      src={sc.url}
-                      alt={sc.label}
-                      className="w-full h-full object-cover object-top transition-transform group-hover:scale-105"
-                      loading="lazy"
-                    />
-                    {/* Overlay actions */}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleLoadScreenshot(sc); }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-pink-500 hover:bg-pink-400 text-white text-xs font-medium rounded-lg transition-colors"
-                      >
-                        <Code2 className="w-3 h-3" />
-                        Analyser
-                      </button>
-                      <a
-                        href={sc.adminUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-medium rounded-lg transition-colors"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        Live
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* Info */}
-                  <div className="p-3 space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-foreground">{sc.label}</p>
-                      <ChevronRight className={cn(
-                        "w-3.5 h-3.5 text-muted-foreground transition-transform",
-                        selectedScreenshot?.id === sc.id ? "rotate-90 text-pink-400" : ""
-                      )} />
-                    </div>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
-                      {sc.description}
-                    </p>
-                    <div className="flex flex-wrap gap-1 pt-0.5">
-                      {sc.tags.map((tag) => (
-                        <span key={tag} className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                  {Icon && <Icon className="w-3 h-3" />}
+                  {label}
+                </button>
               ))}
             </div>
+
+            {/* Affichage par sections (filtre = all) */}
+            {galleryFilter === "all" && (
+              <>
+                <div className="flex items-center gap-2 mb-3">
+                  <Monitor className="w-3.5 h-3.5 text-emerald-400" />
+                  <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wide">Back-Office Web</p>
+                  <div className="flex-1 h-px bg-emerald-500/20" />
+                </div>
+                <div className="grid grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
+                  {MC_SCREENSHOTS.map((sc) => (
+                    <ScreenshotCard
+                      key={sc.id}
+                      sc={sc}
+                      selected={selectedScreenshot?.id === sc.id}
+                      onSelect={setSelectedScreenshot}
+                      onLoad={handleLoadScreenshot}
+                    />
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Smartphone className="w-3.5 h-3.5 text-violet-400" />
+                  <p className="text-xs font-semibold text-violet-400 uppercase tracking-wide">Application Mobile React Native</p>
+                  <div className="flex-1 h-px bg-violet-500/20" />
+                </div>
+                <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
+                  {MC_MOBILE_SCREENSHOTS.map((sc) => (
+                    <ScreenshotCard
+                      key={sc.id}
+                      sc={sc}
+                      selected={selectedScreenshot?.id === sc.id}
+                      onSelect={setSelectedScreenshot}
+                      onLoad={handleLoadScreenshot}
+                      mobileStyle
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Affichage filtré */}
+            {galleryFilter !== "all" && (
+              <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
+                {filteredScreenshots.map((sc) => (
+                  <ScreenshotCard
+                    key={sc.id}
+                    sc={sc}
+                    selected={selectedScreenshot?.id === sc.id}
+                    onSelect={setSelectedScreenshot}
+                    onLoad={handleLoadScreenshot}
+                    mobileStyle={sc.platform === "mobile"}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Panneau détail */}
@@ -418,13 +609,29 @@ export default function UICode() {
                 <img
                   src={selectedScreenshot.url}
                   alt={selectedScreenshot.label}
-                  className="w-full rounded-lg border border-border"
+                  className={cn(
+                    "w-full rounded-lg border border-border",
+                    selectedScreenshot.platform === "mobile" ? "max-h-64 object-contain" : ""
+                  )}
                 />
 
-                {/* Titre */}
+                {/* Titre + badge plateforme */}
                 <div>
-                  <h3 className="font-semibold text-sm">{selectedScreenshot.label}</h3>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-semibold text-sm">{selectedScreenshot.label}</h3>
+                    <span className={cn(
+                      "flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded",
+                      selectedScreenshot.platform === "mobile"
+                        ? "bg-violet-500/20 text-violet-300"
+                        : "bg-emerald-500/20 text-emerald-300"
+                    )}>
+                      {selectedScreenshot.platform === "mobile"
+                        ? <><Smartphone className="w-2.5 h-2.5" /> Mobile</>
+                        : <><Monitor className="w-2.5 h-2.5" /> Web</>
+                      }
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
                     {selectedScreenshot.description}
                   </p>
                 </div>
@@ -460,7 +667,9 @@ export default function UICode() {
                     className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/40 hover:bg-secondary/70 transition-colors text-xs"
                   >
                     <Globe className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                    <span className="truncate text-emerald-400">Ouvrir dans l'admin</span>
+                    <span className="truncate text-emerald-400">
+                      {selectedScreenshot.platform === "mobile" ? "Ouvrir l'app web" : "Ouvrir dans l'admin"}
+                    </span>
                     <ExternalLink className="w-3 h-3 text-muted-foreground shrink-0 ml-auto" />
                   </a>
                 </div>
