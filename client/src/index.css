@@ -43,50 +43,115 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* ══════════════════════════════════════════════════════════
+   PIPL — Thème Clair (Light Mode)
+   Palette : blanc cassé / gris perle / bleu indigo vif
+   ══════════════════════════════════════════════════════════ */
 :root {
   --radius: 0.5rem;
-  /* Dark theme PIPL */
-  --background: oklch(0.08 0.01 264);
-  --foreground: oklch(0.92 0.01 264);
-  --card: oklch(0.11 0.012 264);
-  --card-foreground: oklch(0.92 0.01 264);
-  --popover: oklch(0.11 0.012 264);
-  --popover-foreground: oklch(0.92 0.01 264);
-  --primary: oklch(0.62 0.18 264);
-  --primary-foreground: oklch(0.98 0.005 264);
-  --secondary: oklch(0.16 0.015 264);
-  --secondary-foreground: oklch(0.85 0.01 264);
-  --muted: oklch(0.16 0.015 264);
-  --muted-foreground: oklch(0.55 0.02 264);
-  --accent: oklch(0.62 0.18 264);
-  --accent-foreground: oklch(0.98 0.005 264);
-  --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(0.98 0.005 264);
-  --border: oklch(0.22 0.015 264);
-  --input: oklch(0.22 0.015 264);
-  --ring: oklch(0.62 0.18 264);
-  --chart-1: oklch(0.62 0.18 264);
-  --chart-2: oklch(0.65 0.18 300);
-  --chart-3: oklch(0.65 0.18 160);
-  --chart-4: oklch(0.65 0.18 50);
-  --chart-5: oklch(0.65 0.18 25);
-  --sidebar: oklch(0.10 0.012 264);
-  --sidebar-foreground: oklch(0.92 0.01 264);
-  --sidebar-primary: oklch(0.62 0.18 264);
-  --sidebar-primary-foreground: oklch(0.98 0.005 264);
-  --sidebar-accent: oklch(0.16 0.015 264);
-  --sidebar-accent-foreground: oklch(0.92 0.01 264);
-  --sidebar-border: oklch(0.22 0.015 264);
-  --sidebar-ring: oklch(0.62 0.18 264);
-  /* PIPL tokens */
-  --pipl-blue: oklch(0.62 0.18 264);
-  --pipl-violet: oklch(0.62 0.2 300);
-  --pipl-green: oklch(0.62 0.18 160);
-  --pipl-yellow: oklch(0.72 0.18 80);
-  --pipl-red: oklch(0.55 0.22 25);
+
+  /* Fond principal : blanc légèrement chaud */
+  --background:        oklch(0.98 0.004 264);
+  --foreground:        oklch(0.15 0.02  264);
+
+  /* Cartes : blanc pur avec légère teinte bleue */
+  --card:              oklch(1.00 0.000 264);
+  --card-foreground:   oklch(0.15 0.02  264);
+
+  /* Popover */
+  --popover:           oklch(1.00 0.000 264);
+  --popover-foreground: oklch(0.15 0.02 264);
+
+  /* Primaire : bleu indigo vif — identité PIPL */
+  --primary:           oklch(0.52 0.22  264);
+  --primary-foreground: oklch(0.99 0.003 264);
+
+  /* Secondaire : gris perle très léger */
+  --secondary:         oklch(0.94 0.006 264);
+  --secondary-foreground: oklch(0.30 0.02 264);
+
+  /* Muted : zones atténuées */
+  --muted:             oklch(0.94 0.006 264);
+  --muted-foreground:  oklch(0.50 0.02  264);
+
+  /* Accent : bleu indigo (identique au primaire) */
+  --accent:            oklch(0.94 0.012 264);
+  --accent-foreground: oklch(0.25 0.02  264);
+
+  /* Destructif : rouge doux */
+  --destructive:       oklch(0.55 0.22  25);
+  --destructive-foreground: oklch(0.99 0.003 264);
+
+  /* Bordures et inputs : gris très clair */
+  --border:            oklch(0.88 0.008 264);
+  --input:             oklch(0.88 0.008 264);
+  --ring:              oklch(0.52 0.22  264);
+
+  /* Graphiques */
+  --chart-1:           oklch(0.52 0.22  264);
+  --chart-2:           oklch(0.55 0.20  300);
+  --chart-3:           oklch(0.52 0.18  160);
+  --chart-4:           oklch(0.62 0.18  50);
+  --chart-5:           oklch(0.55 0.22  25);
+
+  /* Sidebar : blanc légèrement grisé */
+  --sidebar:                     oklch(0.97 0.005 264);
+  --sidebar-foreground:          oklch(0.20 0.02  264);
+  --sidebar-primary:             oklch(0.52 0.22  264);
+  --sidebar-primary-foreground:  oklch(0.99 0.003 264);
+  --sidebar-accent:              oklch(0.92 0.010 264);
+  --sidebar-accent-foreground:   oklch(0.25 0.02  264);
+  --sidebar-border:              oklch(0.88 0.008 264);
+  --sidebar-ring:                oklch(0.52 0.22  264);
+
+  /* PIPL tokens — version claire */
+  --pipl-blue:   oklch(0.52 0.22  264);
+  --pipl-violet: oklch(0.52 0.20  300);
+  --pipl-green:  oklch(0.50 0.18  160);
+  --pipl-yellow: oklch(0.62 0.18  80);
+  --pipl-red:    oklch(0.55 0.22  25);
 }
 
-/* Dark mode identical to root since PIPL is always dark */
+/* ── Dark mode (conservé pour compatibilité future) ── */
+.dark {
+  --background:        oklch(0.08 0.01  264);
+  --foreground:        oklch(0.92 0.01  264);
+  --card:              oklch(0.11 0.012 264);
+  --card-foreground:   oklch(0.92 0.01  264);
+  --popover:           oklch(0.11 0.012 264);
+  --popover-foreground: oklch(0.92 0.01 264);
+  --primary:           oklch(0.62 0.18  264);
+  --primary-foreground: oklch(0.98 0.005 264);
+  --secondary:         oklch(0.16 0.015 264);
+  --secondary-foreground: oklch(0.85 0.01 264);
+  --muted:             oklch(0.16 0.015 264);
+  --muted-foreground:  oklch(0.55 0.02  264);
+  --accent:            oklch(0.62 0.18  264);
+  --accent-foreground: oklch(0.98 0.005 264);
+  --destructive:       oklch(0.55 0.22  25);
+  --destructive-foreground: oklch(0.98 0.005 264);
+  --border:            oklch(0.22 0.015 264);
+  --input:             oklch(0.22 0.015 264);
+  --ring:              oklch(0.62 0.18  264);
+  --chart-1:           oklch(0.62 0.18  264);
+  --chart-2:           oklch(0.65 0.18  300);
+  --chart-3:           oklch(0.65 0.18  160);
+  --chart-4:           oklch(0.65 0.18  50);
+  --chart-5:           oklch(0.65 0.18  25);
+  --sidebar:                    oklch(0.10 0.012 264);
+  --sidebar-foreground:         oklch(0.92 0.01  264);
+  --sidebar-primary:            oklch(0.62 0.18  264);
+  --sidebar-primary-foreground: oklch(0.98 0.005 264);
+  --sidebar-accent:             oklch(0.16 0.015 264);
+  --sidebar-accent-foreground:  oklch(0.92 0.01  264);
+  --sidebar-border:             oklch(0.22 0.015 264);
+  --sidebar-ring:               oklch(0.62 0.18  264);
+  --pipl-blue:   oklch(0.62 0.18 264);
+  --pipl-violet: oklch(0.62 0.2  300);
+  --pipl-green:  oklch(0.62 0.18 160);
+  --pipl-yellow: oklch(0.72 0.18 80);
+  --pipl-red:    oklch(0.55 0.22 25);
+}
 
 @layer base {
   * {
@@ -111,24 +176,11 @@
 }
 
 @layer components {
-  /**
-   * Custom container utility that centers content and adds responsive padding.
-   *
-   * This overrides Tailwind's default container behavior to:
-   * - Auto-center content (mx-auto)
-   * - Add responsive horizontal padding
-   * - Set max-width for large screens
-   *
-   * Usage: <div className="container">...</div>
-   *
-   * For custom widths, use max-w-* utilities directly:
-   * <div className="max-w-6xl mx-auto px-4">...</div>
-   */
   .container {
     width: 100%;
     margin-left: auto;
     margin-right: auto;
-    padding-left: 1rem; /* 16px - mobile padding */
+    padding-left: 1rem;
     padding-right: 1rem;
   }
 
@@ -139,31 +191,38 @@
 
   @media (min-width: 640px) {
     .container {
-      padding-left: 1.5rem; /* 24px - tablet padding */
+      padding-left: 1.5rem;
       padding-right: 1.5rem;
     }
   }
 
   @media (min-width: 1024px) {
     .container {
-      padding-left: 2rem; /* 32px - desktop padding */
+      padding-left: 2rem;
       padding-right: 2rem;
-      max-width: 1280px; /* Standard content width */
+      max-width: 1280px;
     }
   }
 }
-/* ── Scrollbar ── */
+
+/* ── Scrollbar — thème clair ── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: oklch(0.28 0.015 264); border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: oklch(0.38 0.02 264); }
+::-webkit-scrollbar-thumb { background: oklch(0.80 0.010 264); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: oklch(0.68 0.015 264); }
 
 /* ── PIPL Utilities ── */
 .gradient-text {
-  background: linear-gradient(135deg, oklch(0.72 0.18 264), oklch(0.72 0.2 300));
+  background: linear-gradient(135deg, oklch(0.52 0.22 264), oklch(0.52 0.20 300));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* ── Ombres douces pour le thème clair ── */
+.shadow-card {
+  box-shadow: 0 1px 3px oklch(0.15 0.02 264 / 0.08),
+              0 1px 2px oklch(0.15 0.02 264 / 0.06);
 }
 
 /* ── React Flow overrides ── */

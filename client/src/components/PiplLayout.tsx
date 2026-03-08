@@ -13,9 +13,12 @@ import {
   GitBranch,
   LayoutDashboard,
   LogOut,
+  Moon,
   Settings,
   Shield,
+  Sun,
 } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -77,6 +80,7 @@ export default function PiplLayout({ children }: { children: React.ReactNode }) 
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [timedOut, setTimedOut] = useStateTimeout(false);
   const [collapsed, setCollapsed] = useState(false);
+  const { theme, toggleTheme, switchable } = useTheme();
   const logout = trpc.auth.logout.useMutation({
     onSuccess: () => { window.location.href = "/login"; },
   });
@@ -167,7 +171,32 @@ export default function PiplLayout({ children }: { children: React.ReactNode }) 
           </div>
         </div>
 
-        {/* Toggle */}
+        {/* Bascule thème */}
+        {switchable && toggleTheme && (
+          <div className="px-2 pb-1">
+            <button
+              onClick={toggleTheme}
+              className={cn(
+                "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-150",
+                collapsed ? "justify-center" : ""
+              )}
+              title={theme === "light" ? "Passer en mode sombre" : "Passer en mode clair"}
+            >
+              {theme === "light" ? (
+                <Moon className="w-4 h-4 shrink-0" />
+              ) : (
+                <Sun className="w-4 h-4 shrink-0" />
+              )}
+              {!collapsed && (
+                <span className="text-xs font-medium">
+                  {theme === "light" ? "Mode sombre" : "Mode clair"}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* Toggle sidebar */}
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="absolute left-0 bottom-20 translate-x-full -translate-y-1/2 w-5 h-10 bg-card border border-border rounded-r-md flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
