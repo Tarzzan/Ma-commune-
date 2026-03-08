@@ -1232,5 +1232,49 @@ header('X-' . APP_SHORT_NAME . '-Version: ' . APP_VERSION);
       return getAppleStatus();
     }),
   }),
+  // ── Proxy API Ma Commune (évite les problèmes CORS côté navigateur) ──────────
+  maCommune: router({
+    stats: protectedProcedure.query(async () => {
+      const MC_API = "https://netetfix.com/mc-api";
+      try {
+        const [statsRes, incidentsRes] = await Promise.all([
+          fetch(`${MC_API}/public/stats`, { headers: { Accept: "application/json" } }),
+          fetch(`${MC_API}/public/incidents?limit=5`, { headers: { Accept: "application/json" } }),
+        ]);
+        if (!statsRes.ok) throw new Error(`Stats API HTTP ${statsRes.status}`);
+        if (!incidentsRes.ok) throw new Error(`Incidents API HTTP ${incidentsRes.status}`);
+        const statsJson = await statsRes.json();
+        const incidentsJson = await incidentsRes.json();
+        const statsData = statsJson.data ?? {};
+        const incidentsList: any[] = incidentsJson.data?.data ?? [];
+        return {
+          success: true,
+          total: statsData.total_incidents ?? 0,
+          pending: statsData.submitted ?? 0,
+          in_progress: statsData.in_progress ?? 0,
+          resolved: statsData.resolved ?? 0,
+          total_citizens: statsData.total_citizens ?? 0,
+          resolution_rate: statsData.resolution_rate ?? null,
+          top_categories: statsData.top_categories ?? [],
+          recent: incidentsList.slice(0, 5).map((i: any) => ({
+            id: i.id,
+            title: i.title ?? i.description?.slice(0, 60) ?? "Signalement",
+            status: i.status,
+            category_name: i.category_name ?? i.category?.name ?? "—",
+            created_at: i.created_at,
+            commune: i.commune ?? null,
+          })),
+        };
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return {
+          success: false,
+          error: msg,
+          total: 0, pending: 0, in_progress: 0, resolved: 0,
+          total_citizens: 0, resolution_rate: null, top_categories: [], recent: [],
+        };
+      }
+    }),
+  }),
 });
 export type AppRouter = typeof appRouter;
