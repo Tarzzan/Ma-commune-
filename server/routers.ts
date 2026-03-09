@@ -1231,6 +1231,21 @@ header('X-' . APP_SHORT_NAME . '-Version: ' . APP_VERSION);
       const { getAppleStatus } = await import("./mobileIntegration");
       return getAppleStatus();
     }),
+    saveCredentials: protectedProcedure
+      .input(z.object({
+        expoToken: z.string().optional(),
+        expoAppId: z.string().optional(),
+        appleKeyId: z.string().optional(),
+        appleIssuerId: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { updateSetting } = await import("./aiEngine");
+        if (input.expoToken !== undefined) await updateSetting("expo_token", input.expoToken);
+        if (input.expoAppId !== undefined) await updateSetting("expo_app_id", input.expoAppId);
+        if (input.appleKeyId !== undefined) await updateSetting("apple_key_id", input.appleKeyId);
+        if (input.appleIssuerId !== undefined) await updateSetting("apple_issuer_id", input.appleIssuerId);
+        return { success: true };
+      }),
   }),
   // ── Proxy API Ma Commune (évite les problèmes CORS côté navigateur) ──────────
   maCommune: router({

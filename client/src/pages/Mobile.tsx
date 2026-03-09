@@ -2,6 +2,7 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -93,6 +94,27 @@ export default function Mobile() {
       refetchOnWindowFocus: false,
     });
 
+  const [newAppId, setNewAppId] = useState("");
+  const [savingAppId, setSavingAppId] = useState(false);
+  const [saveMsg, setSaveMsg] = useState("");
+  const saveCredentials = trpc.mobile.saveCredentials.useMutation();
+
+  const handleSaveAppId = async () => {
+    if (!newAppId.trim()) return;
+    setSavingAppId(true);
+    setSaveMsg("");
+    try {
+      await saveCredentials.mutateAsync({ expoAppId: newAppId.trim() });
+      setSaveMsg("✅ App ID mis à jour — rechargez pour voir les builds");
+      setNewAppId("");
+      setTimeout(() => { refetchExpo(); refetchCheck(); }, 1500);
+    } catch {
+      setSaveMsg("❌ Erreur lors de la mise à jour");
+    } finally {
+      setSavingAppId(false);
+    }
+  };
+
   const handleRefresh = () => {
     refetchCheck();
     refetchExpo();
@@ -129,6 +151,27 @@ export default function Mobile() {
           </Button>
         </div>
 
+        {/* Mise à jour App ID Expo */}
+        <div className="mb-4 p-3 bg-gray-800/60 border border-gray-700 rounded-lg">
+          <p className="text-xs text-gray-400 mb-2">🔧 Mettre à jour l'Expo App ID (projet EAS actif)</p>
+          <div className="flex gap-2">
+            <Input
+              value={newAppId}
+              onChange={(e) => setNewAppId(e.target.value)}
+              placeholder="UUID du projet EAS (ex: b3d38760-9ace-47eb-b84f-37419e550824)"
+              className="bg-gray-900 border-gray-600 text-white text-xs h-8 flex-1"
+            />
+            <Button
+              size="sm"
+              onClick={handleSaveAppId}
+              disabled={savingAppId || !newAppId.trim()}
+              className="bg-blue-700 hover:bg-blue-600 text-white h-8 text-xs whitespace-nowrap"
+            >
+              {savingAppId ? "..." : "Sauvegarder"}
+            </Button>
+          </div>
+          {saveMsg && <p className="text-xs mt-1 text-gray-300">{saveMsg}</p>}
+        </div>
         {/* Connexions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <ConnectionCard
